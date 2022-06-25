@@ -1,0 +1,51 @@
+{% set name = "vertices_to_h5m" %}
+
+package:
+  name: "{{ name|lower }}"
+  # conda package version tag is obtained from the git release version tag
+  version: {{ GIT_DESCRIBE_TAG }}
+
+source:
+  path: ..
+
+build:
+  number: 0
+  script: python setup.py install --single-version-externally-managed --record=record.txt
+  
+  # could be changed to use pip install in the future
+  # script: python -m pip install --no-deps --ignore-installed .
+
+requirements:
+  build:
+    - python {{ python }}
+    - setuptools>=46.4.0
+    - setuptools_scm>=6.3.1
+  run:
+    - python
+    - moab [not win]
+    - numpy
+
+test:
+  imports:
+    - vertices_to_h5m
+  requires:
+    - pytest
+    - dagmc_h5m_file_inspector [not win]
+  source_files:
+    - tests/
+  commands:
+    - pytest tests
+
+
+about:
+  home: "https://github.com/fusion-energy/vertices_to_h5m"
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE.txt
+  doc_url: https://github.com/fusion-energy/vertices_to_h5m
+  dev_url: https://github.com/fusion-energy/vertices_to_h5m
+  summary: vertices_to_h5m - Converts mesh vertices and connectivity to h5m geometry files compatible with DAGMC simulations
+
+extra:
+  recipe-maintainers:
+    - shimwell
