@@ -29,9 +29,9 @@ def fix_normal(vertices, triangles):
 
     # for triangles in triangles_in_each_volume:
     print('fixing', triangles)
-    mesh = trimesh.Trimesh(vertices=vertices, faces=triangles)
+    mesh = trimesh.Trimesh(vertices=vertices, faces=triangles, process=False)
 
-    mesh.fix_normals(multibody = False)
+    mesh.fix_normals()
 
     print('fixed', mesh.faces)
     return mesh.faces
