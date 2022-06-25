@@ -1,21 +1,9 @@
 
-
-import warnings
-
-import gmsh
-import trimesh
-
-import numpy as np
-import trimesh
-
 from typing import Tuple
 
-import gmsh
 import numpy as np
 import trimesh
 from pymoab import core, types
-import numpy as np
-import trimesh
 
 
 def fix_normals(vertices, triangles_in_each_volume):
@@ -164,12 +152,17 @@ def add_triangles_to_moab_core(material_tag,surface_set,moab_core,tags,triangles
 
 from typing import Iterable
 
+
 def vertices_to_h5m(
     vertices:Iterable[Tuple[float, float, float]],
     triangles:Iterable[Tuple[int,int,int]],
     material_tags: Iterable[str],
     h5m_filename='dagmc.h5m'
 ):
+
+    if len(material_tags) != len(triangles):
+        msg=f'The number of material_tags provided is {len(material_tags)} and the number of sets of triangles is {len(triangles)}. You must provide one material_tag for every triangle set'
+        raise ValueError(msg)
 
     triangles = fix_normals(vertices=vertices, triangles_in_each_volume=triangles)
 
