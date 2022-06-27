@@ -1,4 +1,3 @@
-
 from vertices_to_h5m import vertices_to_h5m
 import numpy as np
 import os
@@ -6,14 +5,7 @@ import os
 # These are the x,y,z coordinates of each vertex.
 # The first 4 are used in the first volume
 vertices = np.array(
-    [
-        [0, 0, 0],
-        [1, 0, 0],
-        [0, 1, 0],
-        [0, 0, 1],
-        [1, 1, 1],
-        [1, 1, 0]
-    ], dtype="float64"
+    [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [1, 1, 0]], dtype="float64"
 )
 
 # These are the two sets triangle that connect individual vertices together to form a continious surfaces and also two closed volume.
@@ -30,4 +22,4 @@ vertices_to_h5m(
     h5m_filename="two_volume_touching_edge.h5m",
 )
 
-os.system('mbconvert two_volume_touching_edge.h5m two_volume_touching_edge.vtk')
+os.system("mbconvert two_volume_touching_edge.h5m two_volume_touching_edge.vtk")

@@ -1,13 +1,14 @@
-
 from vertices_to_h5m import vertices_to_h5m
 import numpy as np
 
-vertices = np.array([
-    [0., 0., 0.],
-    [1., 0., 0.],
-    [0., 1., 0.],
-    [0., 0., 1.],
-])
+vertices = np.array(
+    [
+        [0.0, 0.0, 0.0],
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.0, 0.0, 1.0],
+    ]
+)
 
 
 triangles = [

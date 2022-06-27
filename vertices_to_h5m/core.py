@@ -1,4 +1,3 @@
-
 from typing import Tuple
 
 import numpy as np
@@ -13,15 +12,16 @@ def fix_normals(vertices, triangles_in_each_volume):
         fixed_triangles.append(fix_normal(vertices, triangles))
     return fixed_triangles
 
+
 def fix_normal(vertices, triangles):
 
     # for triangles in triangles_in_each_volume:
-    print('fixing', triangles)
+    print("fixing", triangles)
     mesh = trimesh.Trimesh(vertices=vertices, faces=triangles, process=False)
 
     mesh.fix_normals()
 
-    print('fixed', mesh.faces)
+    print("fixed", mesh.faces)
     return mesh.faces
 
     #     # triangles = mesh.faces
@@ -30,6 +30,7 @@ def fix_normal(vertices, triangles):
     #     print('appending triangles')
 
     # return fixed_triangles
+
 
 def _define_moab_core_and_tags() -> Tuple[core.Core, dict]:
     """Creates a MOAB Core instance which can be built up by adding sets of
@@ -84,6 +85,7 @@ def _define_moab_core_and_tags() -> Tuple[core.Core, dict]:
 
     return moab_core, tags
 
+
 def prepare_moab_core(
     moab_core,
     surface_id,
@@ -126,7 +128,9 @@ def add_vertices_to_moab_core(moab_core, vertices, surface_set):
     return moab_core, moab_verts
 
 
-def add_triangles_to_moab_core(material_tag,surface_set,moab_core,tags,triangles, moab_verts, volume_set):
+def add_triangles_to_moab_core(
+    material_tag, surface_set, moab_core, tags, triangles, moab_verts, volume_set
+):
     for triangle in triangles:
 
         tri = (
@@ -150,18 +154,19 @@ def add_triangles_to_moab_core(material_tag,surface_set,moab_core,tags,triangles
 
     return moab_core
 
+
 from typing import Iterable
 
 
 def vertices_to_h5m(
-    vertices:Iterable[Tuple[float, float, float]],
-    triangles:Iterable[Tuple[int,int,int]],
+    vertices: Iterable[Tuple[float, float, float]],
+    triangles: Iterable[Tuple[int, int, int]],
     material_tags: Iterable[str],
-    h5m_filename='dagmc.h5m'
+    h5m_filename="dagmc.h5m",
 ):
 
     if len(material_tags) != len(triangles):
-        msg=f'The number of material_tags provided is {len(material_tags)} and the number of sets of triangles is {len(triangles)}. You must provide one material_tag for every triangle set'
+        msg = f"The number of material_tags provided is {len(material_tags)} and the number of sets of triangles is {len(triangles)}. You must provide one material_tag for every triangle set"
         raise ValueError(msg)
 
     triangles = fix_normals(vertices=vertices, triangles_in_each_volume=triangles)
@@ -169,11 +174,23 @@ def vertices_to_h5m(
     moab_core, tags = _define_moab_core_and_tags()
 
     for vol_id, material_tag in enumerate(material_tags, 1):
-        moab_core, surface_set, volume_set = prepare_moab_core(moab_core,surface_id=vol_id, volume_id=vol_id, tags=tags)
+        moab_core, surface_set, volume_set = prepare_moab_core(
+            moab_core, surface_id=vol_id, volume_id=vol_id, tags=tags
+        )
 
-        moab_core, moab_verts = add_vertices_to_moab_core(moab_core, vertices, surface_set)
+        moab_core, moab_verts = add_vertices_to_moab_core(
+            moab_core, vertices, surface_set
+        )
 
-        moab_core = add_triangles_to_moab_core(material_tag,surface_set,moab_core,tags,triangles[vol_id-1], moab_verts, volume_set)
+        moab_core = add_triangles_to_moab_core(
+            material_tag,
+            surface_set,
+            moab_core,
+            tags,
+            triangles[vol_id - 1],
+            moab_verts,
+            volume_set,
+        )
 
     all_sets = moab_core.get_entities_by_handle(0)
 
