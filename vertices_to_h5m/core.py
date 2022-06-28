@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Iterable, Tuple
 
 import numpy as np
 import trimesh
@@ -16,20 +16,11 @@ def fix_normals(vertices, triangles_in_each_volume):
 def fix_normal(vertices, triangles):
 
     # for triangles in triangles_in_each_volume:
-    print("fixing", triangles)
     mesh = trimesh.Trimesh(vertices=vertices, faces=triangles, process=False)
 
     mesh.fix_normals()
 
-    print("fixed", mesh.faces)
     return mesh.faces
-
-    #     # triangles = mesh.faces
-    #     print('fixed',mesh.faces)
-    #     fixed_triangles.append(mesh.faces)
-    #     print('appending triangles')
-
-    # return fixed_triangles
 
 
 def _define_moab_core_and_tags() -> Tuple[core.Core, dict]:
@@ -131,6 +122,7 @@ def add_vertices_to_moab_core(moab_core, vertices, surface_set):
 def add_triangles_to_moab_core(
     material_tag, surface_set, moab_core, tags, triangles, moab_verts, volume_set
 ):
+
     for triangle in triangles:
 
         tri = (
@@ -153,9 +145,6 @@ def add_triangles_to_moab_core(
     moab_core.add_entity(group_set, volume_set)
 
     return moab_core
-
-
-from typing import Iterable
 
 
 def vertices_to_h5m(
