@@ -31,7 +31,9 @@ def transport_particles_on_h5m_geometry(
 
         materials.append(mat_dag_material_tag)
 
-    materials.cross_sections='/home/jshim/brep_to_h5m/examples/h5m_from_coords/cross_sections.xml'
+    materials.cross_sections = (
+        "/home/jshim/brep_to_h5m/examples/h5m_from_coords/cross_sections.xml"
+    )
     # downloads the nuclear data and sets the openmc_cross_sections environmental variable
     odd.just_in_time_library_generator(libraries="ENDFB-7.1-NNDC", materials=materials)
 
@@ -105,16 +107,14 @@ def test_h5m_production_with_single_volume_list():
 
     # a list of xyz coordinates
     vertices = [
-            [0., 0., 0.],
-            [1., 0., 0.],
-            [0., 1., 0.],
-            [0., 0., 1.],
-        ]
+        [0.0, 0.0, 0.0],
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.0, 0.0, 1.0],
+    ]
 
     # the index of the coordinate that make up the corner of a tet, normals need fixing
-    triangles = [
-        [[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]]
-    ]
+    triangles = [[[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]]]
 
     vertices_to_h5m(
         vertices=vertices,
@@ -133,6 +133,7 @@ def test_h5m_production_with_single_volume_list():
     assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1"]
     assert di.get_volumes_and_materials_from_h5m(test_h5m_filename) == {1: "mat1"}
 
+
 def test_h5m_production_with_single_volume_numpy():
     """The simplest geometry, a single 4 sided shape"""
 
@@ -141,10 +142,10 @@ def test_h5m_production_with_single_volume_numpy():
     # a list of xyz coordinates
     vertices = np.array(
         [
-            [0., 0., 0.],
-            [1., 0., 0.],
-            [0., 1., 0.],
-            [0., 0., 1.],
+            [0.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
         ],
         dtype="float64",
     )
@@ -178,12 +179,12 @@ def test_h5m_production_with_two_touching_volumes_numpy():
     # a list of xyz coordinates
     vertices = np.array(
         [
-            [0., 0., 0.],
-            [1., 0., 0.],
-            [0., 1., 0.],
-            [0., 0., 1.],
-            [1., 1., 1.],
-            [1., 1., 0.],
+            [0.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+            [1.0, 1.0, 1.0],
+            [1.0, 1.0, 0.0],
         ],
         dtype="float64",
     )
@@ -215,7 +216,6 @@ def test_h5m_production_with_two_touching_volumes_numpy():
     }
 
 
-
 def test_h5m_production_with_two_touching_volumes_lists():
     """Two 4 sided shapes that share and edge"""
 
@@ -223,13 +223,13 @@ def test_h5m_production_with_two_touching_volumes_lists():
 
     # a list of xyz coordinates
     vertices = [
-            [0., 0., 0.],
-            [1., 0., 0.],
-            [0., 1., 0.],
-            [0., 0., 1.],
-            [1., 1., 1.],
-            [1., 1., 0.],
-        ]
+        [0.0, 0.0, 0.0],
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.0, 0.0, 1.0],
+        [1.0, 1.0, 1.0],
+        [1.0, 1.0, 0.0],
+    ]
 
     # the index of the coordinate that make up the corner of a tet, normals need fixing
     triangles = [
@@ -256,6 +256,7 @@ def test_h5m_production_with_two_touching_volumes_lists():
         1: "mat1",
         2: "mat2",
     }
+
 
 def test_h5m_production_with_two_touching_vertex_numpy():
     """Two 4 sided shapes that share an single vertex"""
@@ -308,19 +309,19 @@ def test_h5m_production_with_two_touching_vertex_list():
     test_h5m_filename = "touching_vertex_tets.h5m"
 
     vertices = [
-            [0., 0., 0.],
-            [1., 0., 0.],
-            [0., 1., 0.],
-            [0., 0., 1.],
-            [-1., 0., 0.],
-            [0., -1., 0.],
-            [0., 0., -1.],
-        ]
+        [0.0, 0.0, 0.0],
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.0, 0.0, 1.0],
+        [-1.0, 0.0, 0.0],
+        [0.0, -1.0, 0.0],
+        [0.0, 0.0, -1.0],
+    ]
 
     # the index of the coordinate that make up the corner of a tet, normals need fixing
     triangles = [
         [[0, 4, 5], [6, 4, 5], [0, 5, 6], [0, 4, 6]],
-        [[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]]
+        [[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]],
     ]
 
     vertices_to_h5m(
