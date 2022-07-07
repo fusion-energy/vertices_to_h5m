@@ -23,7 +23,8 @@ requirements:
   run:
     - python
     - moab [not win]
-    - numpy
+    - trimesh
+    - networkx
 
 test:
   imports:
