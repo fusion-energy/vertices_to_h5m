@@ -31,6 +31,8 @@ test:
     - vertices_to_h5m
   requires:
     - pytest
+    - trimesh
+    - networkx
     - dagmc_h5m_file_inspector [not win]
   source_files:
     - tests/
