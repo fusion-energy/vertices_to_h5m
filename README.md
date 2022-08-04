@@ -26,13 +26,13 @@ It is strongly advised to used the DAGMC overlap checker to check the
 resulting h5m file (see checking for overlaps section below).
 
 
-# Installation - Conda
+~~# Installation - Conda~~
 
-This single line command should install the package and dependencies (including moab)
+~~This single line command should install the package and dependencies (including moab)~~
 
-```bash
-conda install -c fusion-energy -c fusion-energy vertices_to_h5m
-```
+~~```bash~~
+~~conda install -c fusion-energy -c fusion-energy vertices_to_h5m~~
+~~```~~
 
 # Installation - Pip + Conda
 
