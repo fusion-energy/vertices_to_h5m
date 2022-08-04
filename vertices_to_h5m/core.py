@@ -159,7 +159,7 @@ def vertices_to_h5m(
     with DAGMC enabled neutronics simulations
 
     Args:
-        vertices: 
+        vertices:
         triangles:
         material_tags:
         h5m_filename:
@@ -170,7 +170,11 @@ def vertices_to_h5m(
         raise ValueError(msg)
 
     # limited attribute checking to see if user passed in a list of CadQuery vectors
-    if hasattr(vertices[0], 'x') and hasattr(vertices[0], 'y') and hasattr(vertices[0], 'z'):
+    if (
+        hasattr(vertices[0], "x")
+        and hasattr(vertices[0], "y")
+        and hasattr(vertices[0], "z")
+    ):
         vertices_floats = []
         for vert in vertices:
             vertices_floats.append((vert.x, vert.y, vert.z))
