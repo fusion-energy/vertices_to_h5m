@@ -18,6 +18,7 @@ Tests that check that:
 def transport_particles_on_h5m_geometry(
     h5m_filename,
     material_tags,
+    cross_sections_xml=None
 ):
     """A function for testing the geometry file with particle transport in DAGMC OpenMC"""
 
@@ -31,9 +32,8 @@ def transport_particles_on_h5m_geometry(
 
         materials.append(mat_dag_material_tag)
 
-    materials.cross_sections = (
-        "/home/jshim/brep_to_h5m/examples/h5m_from_coords/cross_sections.xml"
-    )
+    if cross_sections_xml:
+        materials.cross_sections = cross_sections_xml
     # downloads the nuclear data and sets the openmc_cross_sections environmental variable
     odd.just_in_time_library_generator(libraries="ENDFB-7.1-NNDC", materials=materials)
 
