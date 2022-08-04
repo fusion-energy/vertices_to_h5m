@@ -16,9 +16,7 @@ Tests that check that:
 
 
 def transport_particles_on_h5m_geometry(
-    h5m_filename,
-    material_tags,
-    cross_sections_xml=None
+    h5m_filename, material_tags, cross_sections_xml=None
 ):
     """A function for testing the geometry file with particle transport in DAGMC OpenMC"""
 
