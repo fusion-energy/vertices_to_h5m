@@ -3,6 +3,8 @@
 
 [![CI with install](https://github.com/fusion-energy/vertices_to_h5m/actions/workflows/ci_with_install.yml/badge.svg)](https://github.com/fusion-energy/vertices_to_h5m/actions/workflows/ci_with_install.yml)
 
+[![CI with examples](https://github.com/fusion-energy/vertices_to_h5m/actions/workflows/ci_with_examples.yml/badge.svg)](https://github.com/fusion-energy/vertices_to_h5m/actions/workflows/ci_with_examples.yml)
+
 [![Upload Python Package](https://github.com/fusion-energy/vertices_to_h5m/actions/workflows/python-publish.yml/badge.svg)](https://github.com/fusion-energy/vertices_to_h5m/actions/workflows/python-publish.yml)
 [![anaconda-publish](https://github.com/fusion-energy/vertices_to_h5m/actions/workflows/anaconda-publish.yml/badge.svg)](https://github.com/fusion-energy/vertices_to_h5m/actions/workflows/anaconda-publish.yml)
 
