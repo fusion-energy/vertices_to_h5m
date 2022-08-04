@@ -154,20 +154,26 @@ def vertices_to_h5m(
     h5m_filename="dagmc.h5m",
 ):
     """Converts vertices and triangle sets into a tagged h5m file compatible
-    with DAGMC enabled neutronics simulations"""
+    with DAGMC enabled neutronics simulations
+
+    Args:
+        vertices: 
+        triangles:
+        material_tags:
+        h5m_filename:
+    """
 
     if len(material_tags) != len(triangles):
         msg = f"The number of material_tags provided is {len(material_tags)} and the number of sets of triangles is {len(triangles)}. You must provide one material_tag for every triangle set"
         raise ValueError(msg)
 
-    # limited type checking to see if user passed in a list of CadQuery vectors
-    if isinstance(vertices[0], tuple):
-        vertices_floats = vertices
-    else:
-        # possibly a cadquery vector object
+    # limited attribute checking to see if user passed in a list of CadQuery vectors
+    if hasattr(vertices[0], 'x') and hasattr(vertices[0], 'y') and hasattr(vertices[0], 'z'):
         vertices_floats = []
         for vert in vertices:
             vertices_floats.append((vert.x, vert.y, vert.z))
+    else:
+        vertices_floats = vertices
 
     triangles = fix_normals(vertices=vertices_floats, triangles_in_each_volume=triangles)
 
