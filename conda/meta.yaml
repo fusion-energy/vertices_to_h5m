@@ -35,6 +35,7 @@ test:
     - networkx
     - dagmc_h5m_file_inspector [not win]
     - openmc
+    - scipy  # trimesh makes use of scipy to fix normals in some cases
   source_files:
     - tests/
   commands:
