@@ -148,7 +148,9 @@ def add_triangles_to_moab_core(
 
 
 def vertices_to_h5m(
-    vertices: Union[Iterable[Tuple[float, float, float]], Iterable['cadquery.occ_impl.geom.Vector']],
+    vertices: Union[
+        Iterable[Tuple[float, float, float]], Iterable["cadquery.occ_impl.geom.Vector"]
+    ],
     triangles: Iterable[Tuple[int, int, int]],
     material_tags: Iterable[str],
     h5m_filename="dagmc.h5m",
@@ -169,7 +171,9 @@ def vertices_to_h5m(
         for vert in vertices:
             vertices_floats.append((vert.x, vert.y, vert.z))
 
-    triangles = fix_normals(vertices=vertices_floats, triangles_in_each_volume=triangles)
+    triangles = fix_normals(
+        vertices=vertices_floats, triangles_in_each_volume=triangles
+    )
 
     moab_core, tags = _define_moab_core_and_tags()
 
