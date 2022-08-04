@@ -26,6 +26,9 @@ jobs:
       
       - name: install cadquery as needed by the examples
         run: |
+          apt-get --allow-releaseinfo-change update
+          apt-get update -y
+          apt-get upgrade -y
           apt-get install -y libgl1-mesa-glx libgl1-mesa-dev libglu1-mesa-dev  freeglut3-dev libosmesa6 libosmesa6-dev  libgles2-mesa-dev
           conda install -c cadquery -c conda-forge cadquery=master
 
