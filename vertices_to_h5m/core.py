@@ -1,4 +1,4 @@
-from typing import Iterable, Tuple
+from typing import Iterable, Tuple, Union
 
 import numpy as np
 import trimesh
@@ -148,17 +148,28 @@ def add_triangles_to_moab_core(
 
 
 def vertices_to_h5m(
-    vertices: Iterable[Tuple[float, float, float]],
+    vertices: Union[Iterable[Tuple[float, float, float]], Iterable['cadquery.occ_impl.geom.Vector']],
     triangles: Iterable[Tuple[int, int, int]],
     material_tags: Iterable[str],
     h5m_filename="dagmc.h5m",
 ):
+    """Converts vertices and triangle sets into a tagged h5m file compatible
+    with DAGMC enabled neutronics simulations"""
 
     if len(material_tags) != len(triangles):
         msg = f"The number of material_tags provided is {len(material_tags)} and the number of sets of triangles is {len(triangles)}. You must provide one material_tag for every triangle set"
         raise ValueError(msg)
 
-    triangles = fix_normals(vertices=vertices, triangles_in_each_volume=triangles)
+    # limited type checking to see if user passed in a list of CadQuery vectors
+    if isinstance(vertices[0], tuple):
+        vertices_floats = vertices
+    else:
+        # possibly a cadquery vector object
+        vertices_floats = []
+        for vert in vertices:
+            vertices_floats.append((vert.x, vert.y, vert.z))
+
+    triangles = fix_normals(vertices=vertices_floats, triangles_in_each_volume=triangles)
 
     moab_core, tags = _define_moab_core_and_tags()
 
@@ -168,7 +179,7 @@ def vertices_to_h5m(
         )
 
         moab_core, moab_verts = add_vertices_to_moab_core(
-            moab_core, vertices, surface_set
+            moab_core, vertices_floats, surface_set
         )
 
         moab_core = add_triangles_to_moab_core(
