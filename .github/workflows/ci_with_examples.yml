@@ -1,0 +1,42 @@
+
+# This CI will launch a Docker image that contains all the dependencies required
+# within that image the pytest test suite is run 
+
+
+name: CI with examples
+
+on:
+  pull_request:    
+    branches:
+    - develop
+    - main
+ 
+jobs:
+  testing:
+    runs-on: ubuntu-latest
+    container:
+      image: continuumio/miniconda3
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      
+      - name: install package
+        run: |
+          pip install .
+      
+      - name: install cadquery as needed by the examples
+        run: |
+          apt-get --allow-releaseinfo-change update
+          apt-get update -y
+          apt-get upgrade -y
+          apt-get install -y libgl1-mesa-glx libgl1-mesa-dev libglu1-mesa-dev  freeglut3-dev libosmesa6 libosmesa6-dev  libgles2-mesa-dev
+          conda install -c conda-forge mamba
+          mamba install -c conda-forge moab
+          conda install -c cadquery -c conda-forge cadquery=master
+
+      - name: Run examples
+        run: |
+          cd examples
+          python one_volume_cadquery_tesselation.py
+          python one_volume_mesh.py
+          python two_volume_mesh.py
