@@ -169,7 +169,7 @@ def test_h5m_production_with_single_volume_numpy():
     assert di.get_volumes_and_materials_from_h5m(test_h5m_filename) == {1: "mat1"}
 
 
-def test_h5m_production_with_two_touching_volumes_numpy():
+def test_h5m_production_with_two_touching_edges_numpy():
     """Two 4 sided shapes that share and edge"""
 
     test_h5m_filename = "double_tet.h5m"
@@ -214,7 +214,7 @@ def test_h5m_production_with_two_touching_volumes_numpy():
     }
 
 
-def test_h5m_production_with_two_touching_volumes_lists():
+def test_h5m_production_with_two_touching_edges_lists():
     """Two 4 sided shapes that share and edge"""
 
     test_h5m_filename = "double_tet.h5m"
@@ -320,6 +320,53 @@ def test_h5m_production_with_two_touching_vertex_list():
     triangles = [
         [[0, 4, 5], [6, 4, 5], [0, 5, 6], [0, 4, 6]],
         [[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]],
+    ]
+
+    vertices_to_h5m(
+        vertices=vertices,
+        triangles=triangles,
+        material_tags=["mat1", "mat2"],
+        h5m_filename=test_h5m_filename,
+    )
+
+    transport_particles_on_h5m_geometry(
+        h5m_filename=test_h5m_filename,
+        material_tags=["mat1", "mat2"],
+    )
+
+    assert Path(test_h5m_filename).is_file()
+    assert di.get_volumes_from_h5m(test_h5m_filename) == [1, 2]
+    assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
+    assert di.get_volumes_and_materials_from_h5m(test_h5m_filename) == {
+        1: "mat1",
+        2: "mat2",
+    }
+
+
+def test_h5m_production_with_two_touching_face_numpy():
+    """Two 4 sided shapes that share a face"""
+
+    test_h5m_filename = "double_tet_touching_face.h5m"
+
+    # a list of xyz coordinates
+    vertices = np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+            [1.0, 0.0, 1.0],
+            [0.0, 1.0, 1.0],
+            # [1.0, 1.0, 1.0],
+            # [1.0, 1.0, 0.0],
+        ],
+        dtype="float64",
+    )
+
+    # the index of the coordinate that make up the corner of a tet, normals need fixing
+    triangles = [
+        np.array([[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]]),
+        np.array([[1, 2, 3], [1, 3, 4], [3, 5, 2], [1, 2, 4], [2, 4, 5], [3, 5, 4]]),
     ]
 
     vertices_to_h5m(
