@@ -366,7 +366,7 @@ def test_h5m_production_with_two_touching_face_numpy():
     # the index of the coordinate that make up the corner of a tet, normals need fixing
     triangles = [
         np.array([[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]]),
-        np.array([[1,2,3], [1,3,4], [3,5,2], [1,2,4], [2,4,5], [3,5,4]]),
+        np.array([[1, 2, 3], [1, 3, 4], [3, 5, 2], [1, 2, 4], [2, 4, 5], [3, 5, 4]]),
     ]
 
     vertices_to_h5m(
