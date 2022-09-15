@@ -22,6 +22,7 @@ jobs:
             conda install -y anaconda-client conda-build
             conda config --set anaconda_upload no
             conda install boa -c conda-forge
+            conda install mamba -c conda-forge
       - name: Build and test
         env:
           GIT_DESCRIBE_TAG: 0.1
