@@ -21,7 +21,7 @@ requirements:
     - setuptools>=46.4.0
     - setuptools_scm>=6.3.1
   run:
-    - python
+    - python {{ python }}
     - moab * nompi_tempest_*
     - trimesh
     - networkx
