@@ -21,10 +21,11 @@ requirements:
     - setuptools>=46.4.0
     - setuptools_scm>=6.3.1
   run:
-    - python {{ python }}
+    - python
     - moab * nompi_tempest_*
     - trimesh
     - networkx
+    - scipy  # trimesh makes use of scipy to fix normals in some cases
 
 test:
   imports:
@@ -32,8 +33,8 @@ test:
   requires:
     - pytest
     - dagmc_h5m_file_inspector
+    - openmc_data_downloader
     - openmc
-    - scipy  # trimesh makes use of scipy to fix normals in some cases
   source_files:
     - tests/
   commands:
