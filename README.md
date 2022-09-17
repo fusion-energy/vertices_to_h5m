@@ -28,10 +28,10 @@ resulting h5m file (see checking for overlaps section below).
 
 # Installation - Conda
 
-This single line command should install the package and dependencies (including moab)
+This single line command should install the package and dependencies (including moab).
 
 ```bash
-conda install -c fusion-energy -c fusion-energy vertices_to_h5m
+conda install -c fusion-energy -c conda-forge vertices_to_h5m
 ```
 
 # Installation - Pip + Conda
