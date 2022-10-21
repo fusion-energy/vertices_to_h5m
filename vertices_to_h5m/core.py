@@ -198,9 +198,8 @@ def vertices_to_h5m_h5py(
     vertices_floats = check_vertices(vertices)
 
     local_triangle_groups = fix_normals(
-            vertices=vertices_floats,
-            triangles_in_each_volume=triangle_groups
-        )
+        vertices=vertices_floats, triangles_in_each_volume=triangle_groups
+    )
 
     f = h5py.File(h5m_filename, "w")
 
@@ -262,6 +261,7 @@ def vertices_to_h5m_h5py(
 
     tags = tstt.create_group("tags")
 
+
 def check_vertices(vertices):
     # limited attribute checking to see if user passed in a list of CadQuery vectors
     if (
@@ -274,7 +274,7 @@ def check_vertices(vertices):
             vertices_floats.append((vert.x, vert.y, vert.z))
     else:
         vertices_floats = vertices
-    
+
     return vertices_floats
 
 
