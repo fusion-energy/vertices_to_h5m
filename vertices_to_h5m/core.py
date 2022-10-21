@@ -161,11 +161,13 @@ def vertices_to_h5m(
     with DAGMC enabled neutronics simulations
 
     Args:
-        vertices:
-        triangles:
-        material_tags:
-        h5m_filename:
+        vertices: an iterable of x,y,z coordinates
+        triangles: an iterable of triangle sets
+        material_tags: the material names to tag the triangle sets with
+        h5m_filename: the output h5m filename
+        method: the method of creating the h5m file, either 'pymoab' or 'h5py'
     """
+
     if method == 'h5py':
         vertices_to_h5m_h5py(
             vertices=vertices,
@@ -173,14 +175,15 @@ def vertices_to_h5m(
             material_tags=material_tags,
             h5m_filename=h5m_filename
         )
-
     if method == 'pymoab':
         vertices_to_h5m_pymoab(
             vertices=vertices,
             triangles=triangles,
             material_tags=material_tags,
             h5m_filename=h5m_filename
-        )
+        )    
+    else:
+        raise ValueError(f'method must be either pymoab or h5py, not {method}')
 
 
 def vertices_to_h5m_h5py(
@@ -234,13 +237,13 @@ def vertices_to_h5m_h5py(
     conn.attrs.create("start_id", global_id)
     global_id += len(all_triangles)
 
-    key='materials'
+    key = 'materials'  # not sure what dagmc expects here
     tags = elem_group.create_group("tags")
     tags.create_dataset(
         key,
-        data=[0,0,0,0,1,1,1,1,1,1],
-        # compression=compression,
-        # compression_opts=compression_opts,
+        data=[0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
+        # compression=compression, commented out to use default here, meshio uses gzip here
+        # compression_opts=compression_opts, commented out to use default here, meshio uses 4 here
     )
 
     nodes = tstt.create_group("nodes")
