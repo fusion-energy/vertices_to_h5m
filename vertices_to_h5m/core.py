@@ -121,10 +121,10 @@ def add_vertices_to_moab_core(moab_core, vertices, surface_set):
 
 
 def add_triangles_to_moab_core(
-    material_tag, surface_set, moab_core, tags, triangles, moab_verts, volume_set
+    material_tag, surface_set, moab_core, tags, triangle_groups, moab_verts, volume_set
 ):
 
-    for triangle in triangles:
+    for triangle in triangle_groups:
 
         tri = (
             moab_verts[int(triangle[0])],
@@ -152,7 +152,7 @@ def vertices_to_h5m(
     vertices: Union[
         Iterable[Tuple[float, float, float]], Iterable["cadquery.occ_impl.geom.Vector"]
     ],
-    triangles: Iterable[Tuple[int, int, int]],
+    triangle_groups: Iterable[Tuple[int, int, int]],
     material_tags: Iterable[str],
     h5m_filename="dagmc.h5m",
     method="h5py",
@@ -162,7 +162,7 @@ def vertices_to_h5m(
 
     Args:
         vertices: an iterable of x,y,z coordinates
-        triangles: an iterable of triangle sets
+        triangle_groups: an iterable of triangle sets
         material_tags: the material names to tag the triangle sets with
         h5m_filename: the output h5m filename
         method: the method of creating the h5m file, either 'pymoab' or 'h5py'
@@ -171,14 +171,14 @@ def vertices_to_h5m(
     if method == "h5py":
         vertices_to_h5m_h5py(
             vertices=vertices,
-            triangles=triangles,
+            triangle_groups=triangle_groups,
             material_tags=material_tags,
             h5m_filename=h5m_filename,
         )
-    if method == "pymoab":
+    elif method == "pymoab":
         vertices_to_h5m_pymoab(
             vertices=vertices,
-            triangles=triangles,
+            triangle_groups=triangle_groups,
             material_tags=material_tags,
             h5m_filename=h5m_filename,
         )
@@ -190,15 +190,21 @@ def vertices_to_h5m_h5py(
     vertices: Union[
         Iterable[Tuple[float, float, float]], Iterable["cadquery.occ_impl.geom.Vector"]
     ],
-    triangles: Iterable[Tuple[int, int, int]],
+    triangle_groups: Iterable[Tuple[int, int, int]],
     material_tags: Iterable[str],
     h5m_filename="dagmc.h5m",
 ):
 
+    vertices_floats = check_vertices(vertices)
+
+    local_triangle_groups = fix_normals(
+            vertices=vertices_floats,
+            triangles_in_each_volume=triangle_groups
+        )
+
     f = h5py.File(h5m_filename, "w")
 
-    # todo rename triangles to triangle_groups
-    all_triangles = np.vstack(triangles)
+    all_triangles = np.vstack(local_triangle_groups)
 
     tstt = f.create_group("tstt")
 
@@ -241,7 +247,7 @@ def vertices_to_h5m_h5py(
     tags = elem_group.create_group("tags")
     tags.create_dataset(
         key,
-        data=[0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
+        data=[0, 0, 0, 0, 1, 1, 1, 1, 1, 1],  # todo these must be found automatically
         # compression=compression, commented out to use default here, meshio uses gzip here
         # compression_opts=compression_opts, commented out to use default here, meshio uses 4 here
     )
@@ -256,20 +262,7 @@ def vertices_to_h5m_h5py(
 
     tags = tstt.create_group("tags")
 
-
-def vertices_to_h5m_pymoab(
-    vertices: Union[
-        Iterable[Tuple[float, float, float]], Iterable["cadquery.occ_impl.geom.Vector"]
-    ],
-    triangles: Iterable[Tuple[int, int, int]],
-    material_tags: Iterable[str],
-    h5m_filename="dagmc.h5m",
-):
-
-    if len(material_tags) != len(triangles):
-        msg = f"The number of material_tags provided is {len(material_tags)} and the number of sets of triangles is {len(triangles)}. You must provide one material_tag for every triangle set"
-        raise ValueError(msg)
-
+def check_vertices(vertices):
     # limited attribute checking to see if user passed in a list of CadQuery vectors
     if (
         hasattr(vertices[0], "x")
@@ -281,9 +274,27 @@ def vertices_to_h5m_pymoab(
             vertices_floats.append((vert.x, vert.y, vert.z))
     else:
         vertices_floats = vertices
+    
+    return vertices_floats
+
+
+def vertices_to_h5m_pymoab(
+    vertices: Union[
+        Iterable[Tuple[float, float, float]], Iterable["cadquery.occ_impl.geom.Vector"]
+    ],
+    triangle_groups: Iterable[Tuple[int, int, int]],
+    material_tags: Iterable[str],
+    h5m_filename="dagmc.h5m",
+):
+
+    if len(material_tags) != len(triangle_groups):
+        msg = f"The number of material_tags provided is {len(material_tags)} and the number of sets of triangles is {len(triangles)}. You must provide one material_tag for every triangle set"
+        raise ValueError(msg)
+
+    vertices_floats = check_vertices(vertices)
 
     triangles = fix_normals(
-        vertices=vertices_floats, triangles_in_each_volume=triangles
+        vertices=vertices_floats, triangles_in_each_volume=triangle_groups
     )
 
     moab_core, tags = _define_moab_core_and_tags()
