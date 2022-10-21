@@ -101,11 +101,11 @@ def transport_particles_on_h5m_geometry(
     sp = openmc.StatePoint(sp_filename)
 
     # access the tally
-    tally = sp.get_tally(name='flux')
+    tally = sp.get_tally(name="flux")
 
     df = tally.get_pandas_dataframe()
 
-    flux_tally_result = df['mean'].sum()
+    flux_tally_result = df["mean"].sum()
 
     return flux_tally_result
 
