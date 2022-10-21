@@ -19,7 +19,9 @@ tstt = f.create_group("tstt")
 
 elements = tstt.create_group("elements")
 
-global_id = 1  # not sure if this is need, appears to count both triangles and coordinates
+global_id = (
+    1  # not sure if this is need, appears to count both triangles and coordinates
+)
 mesh_type = "Tri3"
 mesh_name = 2
 
@@ -48,7 +50,7 @@ my_group.attrs.create("element_type", mesh_name, dtype=elem_dt)
 # compression_opts=4 #meshio defaults
 conn = my_group.create_dataset(
     "connectivity",
-    data=triangles+1, # node indices are 1 based in h5m
+    data=triangles + 1,  # node indices are 1 based in h5m
     # compression=compression,
     # compression_opts=compression_opts,
 )
