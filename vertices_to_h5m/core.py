@@ -3,6 +3,7 @@ from typing import Iterable, Tuple, Union
 import numpy as np
 import trimesh
 from pymoab import core, types
+import h5py
 
 
 def fix_normals(vertices, triangles_in_each_volume):
@@ -154,6 +155,7 @@ def vertices_to_h5m(
     triangles: Iterable[Tuple[int, int, int]],
     material_tags: Iterable[str],
     h5m_filename="dagmc.h5m",
+    method='h5py'
 ):
     """Converts vertices and triangle sets into a tagged h5m file compatible
     with DAGMC enabled neutronics simulations
@@ -164,6 +166,102 @@ def vertices_to_h5m(
         material_tags:
         h5m_filename:
     """
+    if method == 'h5py':
+        vertices_to_h5m_h5py(
+            vertices=vertices,
+            triangles=triangles,
+            material_tags=material_tags,
+            h5m_filename=h5m_filename
+        )
+
+    if method == 'pymoab':
+        vertices_to_h5m_pymoab(
+            vertices=vertices,
+            triangles=triangles,
+            material_tags=material_tags,
+            h5m_filename=h5m_filename
+        )
+
+
+def vertices_to_h5m_h5py(
+    vertices: Union[
+        Iterable[Tuple[float, float, float]], Iterable["cadquery.occ_impl.geom.Vector"]
+    ],
+    triangles: Iterable[Tuple[int, int, int]],
+    material_tags: Iterable[str],
+    h5m_filename="dagmc.h5m",
+):
+
+    f = h5py.File(h5m_filename, "w")
+
+    # todo rename triangles to triangle_groups
+    all_triangles = np.vstack(triangles)
+
+    tstt = f.create_group("tstt")
+
+    elements = tstt.create_group("elements")
+
+    global_id = 1  # counts both triangles and coordinates
+    mesh_type = "Tri3"
+    mesh_name = 2
+
+    elem_dt = h5py.special_dtype(
+        enum=(
+            "i",
+            {
+                "Edge": 1,
+                "Tri": 2,
+                "Quad": 3,
+                "Polygon": 4,
+                "Tet": 5,
+                "Pyramid": 6,
+                "Prism": 7,
+                "Knife": 8,
+                "Hex": 9,
+                "Polyhedron": 10,
+            },
+        )
+    )
+
+    elem_group = elements.create_group(mesh_type)
+    elem_group.attrs.create("element_type", mesh_name, dtype=elem_dt)
+
+    conn = elem_group.create_dataset(
+        "connectivity",
+        data=all_triangles+1,  # node indices are 1 based in h5m
+    )
+
+    conn.attrs.create("start_id", global_id)
+    global_id += len(all_triangles)
+
+    key='materials'
+    tags = elem_group.create_group("tags")
+    tags.create_dataset(
+        key,
+        data=[0,0,0,0,1,1,1,1,1,1],
+        # compression=compression,
+        # compression_opts=compression_opts,
+    )
+
+    nodes = tstt.create_group("nodes")
+
+    coords = nodes.create_dataset("coordinates", data=vertices)
+    coords.attrs.create("start_id", global_id)
+    global_id += len(vertices)
+
+    sets = tstt.create_group("sets")
+
+    tags = tstt.create_group("tags")
+
+
+def vertices_to_h5m_pymoab(
+    vertices: Union[
+        Iterable[Tuple[float, float, float]], Iterable["cadquery.occ_impl.geom.Vector"]
+    ],
+    triangles: Iterable[Tuple[int, int, int]],
+    material_tags: Iterable[str],
+    h5m_filename="dagmc.h5m",
+):
 
     if len(material_tags) != len(triangles):
         msg = f"The number of material_tags provided is {len(material_tags)} and the number of sets of triangles is {len(triangles)}. You must provide one material_tag for every triangle set"
