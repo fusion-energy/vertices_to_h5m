@@ -167,37 +167,23 @@ def vertices_to_h5m(
         h5m_filename: the output h5m filename
         method: the method of creating the h5m file, either 'pymoab' or 'h5py'
     """
-<<<<<<< HEAD
 
-    if method == 'h5py':
-=======
     if method == "h5py":
->>>>>>> fbf45a60d1de2c783000723a68aa48848855eb66
         vertices_to_h5m_h5py(
             vertices=vertices,
             triangles=triangles,
             material_tags=material_tags,
             h5m_filename=h5m_filename,
         )
-<<<<<<< HEAD
-    if method == 'pymoab':
-=======
-
     if method == "pymoab":
->>>>>>> fbf45a60d1de2c783000723a68aa48848855eb66
         vertices_to_h5m_pymoab(
             vertices=vertices,
             triangles=triangles,
             material_tags=material_tags,
-<<<<<<< HEAD
-            h5m_filename=h5m_filename
-        )    
-    else:
-        raise ValueError(f'method must be either pymoab or h5py, not {method}')
-=======
             h5m_filename=h5m_filename,
         )
->>>>>>> fbf45a60d1de2c783000723a68aa48848855eb66
+    else:
+        raise ValueError(f"method must be either pymoab or h5py, not {method}")
 
 
 def vertices_to_h5m_h5py(
