@@ -155,7 +155,7 @@ def vertices_to_h5m(
     triangles: Iterable[Tuple[int, int, int]],
     material_tags: Iterable[str],
     h5m_filename="dagmc.h5m",
-    method='h5py'
+    method="h5py",
 ):
     """Converts vertices and triangle sets into a tagged h5m file compatible
     with DAGMC enabled neutronics simulations
@@ -166,20 +166,20 @@ def vertices_to_h5m(
         material_tags:
         h5m_filename:
     """
-    if method == 'h5py':
+    if method == "h5py":
         vertices_to_h5m_h5py(
             vertices=vertices,
             triangles=triangles,
             material_tags=material_tags,
-            h5m_filename=h5m_filename
+            h5m_filename=h5m_filename,
         )
 
-    if method == 'pymoab':
+    if method == "pymoab":
         vertices_to_h5m_pymoab(
             vertices=vertices,
             triangles=triangles,
             material_tags=material_tags,
-            h5m_filename=h5m_filename
+            h5m_filename=h5m_filename,
         )
 
 
@@ -228,17 +228,17 @@ def vertices_to_h5m_h5py(
 
     conn = elem_group.create_dataset(
         "connectivity",
-        data=all_triangles+1,  # node indices are 1 based in h5m
+        data=all_triangles + 1,  # node indices are 1 based in h5m
     )
 
     conn.attrs.create("start_id", global_id)
     global_id += len(all_triangles)
 
-    key='materials'
+    key = "materials"
     tags = elem_group.create_group("tags")
     tags.create_dataset(
         key,
-        data=[0,0,0,0,1,1,1,1,1,1],
+        data=[0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
         # compression=compression,
         # compression_opts=compression_opts,
     )
