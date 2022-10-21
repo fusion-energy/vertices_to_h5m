@@ -4,7 +4,8 @@ from pathlib import Path
 import dagmc_h5m_file_inspector as di
 import openmc
 import openmc_data_downloader as odd
-import math
+import pytest
+
 
 """
 Tests that check that:
@@ -67,8 +68,8 @@ def transport_particles_on_h5m_geometry(
     settings.source = my_source
 
     # adds a tally to record the heat deposited in entire geometry
-    cell_tally = openmc.Tally(name="heating")
-    cell_tally.scores = ["heating"]
+    cell_tally = openmc.Tally(name="flux")
+    cell_tally.scores = ["flux"]
 
     # creates a mesh that covers the geometry
     mesh = openmc.RegularMesh()
@@ -80,11 +81,11 @@ def transport_particles_on_h5m_geometry(
     ]  # x,y,z coordinates start at 0 as this is a sector model
     mesh.upper_right = [10, 10, 10]
 
-    # makes a mesh tally using the previously created mesh and records heating on the mesh
-    mesh_tally = openmc.Tally(name="heating_on_mesh")
+    # makes a mesh tally using the previously created mesh and records flux on the mesh
+    mesh_tally = openmc.Tally(name="flux_on_mesh")
     mesh_filter = openmc.MeshFilter(mesh)
     mesh_tally.filters = [mesh_filter]
-    mesh_tally.scores = ["heating"]
+    mesh_tally.scores = ["flux"]
 
     # groups the two tallies
     tallies = openmc.Tallies([cell_tally, mesh_tally])
@@ -95,7 +96,18 @@ def transport_particles_on_h5m_geometry(
     )
 
     # starts the simulation
-    my_model.run()
+    sp_filename = my_model.run()
+
+    sp = openmc.StatePoint(sp_filename)
+
+    # access the tally
+    tally = sp.get_tally(name='flux')
+
+    df = tally.get_pandas_dataframe()
+
+    flux_tally_result = df['mean'].sum()
+
+    return flux_tally_result
 
 
 def test_h5m_production_with_single_volume_list():
@@ -121,11 +133,11 @@ def test_h5m_production_with_single_volume_list():
         h5m_filename=test_h5m_filename,
     )
 
-    transport_particles_on_h5m_geometry(
+    flux_value = transport_particles_on_h5m_geometry(
         h5m_filename=test_h5m_filename,
         material_tags=["mat1"],
     )
-
+    assert flux_value == pytest.approx(9994.523679063743)
     assert Path(test_h5m_filename).is_file()
     assert di.get_volumes_from_h5m(test_h5m_filename) == [1]
     assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1"]
@@ -158,11 +170,12 @@ def test_h5m_production_with_single_volume_numpy():
         h5m_filename=test_h5m_filename,
     )
 
-    transport_particles_on_h5m_geometry(
+    flux_value = transport_particles_on_h5m_geometry(
         h5m_filename=test_h5m_filename,
         material_tags=["mat1"],
     )
 
+    assert flux_value == pytest.approx(9994.523679063743)
     assert Path(test_h5m_filename).is_file()
     assert di.get_volumes_from_h5m(test_h5m_filename) == [1]
     assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1"]
@@ -200,11 +213,12 @@ def test_h5m_production_with_two_touching_edges_numpy():
         h5m_filename=test_h5m_filename,
     )
 
-    transport_particles_on_h5m_geometry(
+    flux_value = transport_particles_on_h5m_geometry(
         h5m_filename=test_h5m_filename,
         material_tags=["mat1", "mat2"],
     )
 
+    assert flux_value == pytest.approx(9992.03209797692)
     assert Path(test_h5m_filename).is_file()
     assert di.get_volumes_from_h5m(test_h5m_filename) == [1, 2]
     assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
@@ -242,11 +256,12 @@ def test_h5m_production_with_two_touching_edges_lists():
         h5m_filename=test_h5m_filename,
     )
 
-    transport_particles_on_h5m_geometry(
+    flux_value = transport_particles_on_h5m_geometry(
         h5m_filename=test_h5m_filename,
         material_tags=["mat1", "mat2"],
     )
 
+    assert flux_value == pytest.approx(9992.03209797692)
     assert Path(test_h5m_filename).is_file()
     assert di.get_volumes_from_h5m(test_h5m_filename) == [1, 2]
     assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
@@ -287,11 +302,12 @@ def test_h5m_production_with_two_touching_vertex_numpy():
         h5m_filename=test_h5m_filename,
     )
 
-    transport_particles_on_h5m_geometry(
+    flux_value = transport_particles_on_h5m_geometry(
         h5m_filename=test_h5m_filename,
         material_tags=["mat1", "mat2"],
     )
 
+    assert flux_value == pytest.approx(9992.93026368412)
     assert Path(test_h5m_filename).is_file()
     assert di.get_volumes_from_h5m(test_h5m_filename) == [1, 2]
     assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
@@ -329,11 +345,12 @@ def test_h5m_production_with_two_touching_vertex_list():
         h5m_filename=test_h5m_filename,
     )
 
-    transport_particles_on_h5m_geometry(
+    flux_value = transport_particles_on_h5m_geometry(
         h5m_filename=test_h5m_filename,
         material_tags=["mat1", "mat2"],
     )
 
+    assert flux_value == pytest.approx(9992.93026368412)
     assert Path(test_h5m_filename).is_file()
     assert di.get_volumes_from_h5m(test_h5m_filename) == [1, 2]
     assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
@@ -357,8 +374,6 @@ def test_h5m_production_with_two_touching_face_numpy():
             [0.0, 0.0, 1.0],
             [1.0, 0.0, 1.0],
             [0.0, 1.0, 1.0],
-            # [1.0, 1.0, 1.0],
-            # [1.0, 1.0, 0.0],
         ],
         dtype="float64",
     )
@@ -376,11 +391,12 @@ def test_h5m_production_with_two_touching_face_numpy():
         h5m_filename=test_h5m_filename,
     )
 
-    transport_particles_on_h5m_geometry(
+    flux_value = transport_particles_on_h5m_geometry(
         h5m_filename=test_h5m_filename,
         material_tags=["mat1", "mat2"],
     )
 
+    assert flux_value == pytest.approx(9972.750052518444)
     assert Path(test_h5m_filename).is_file()
     assert di.get_volumes_from_h5m(test_h5m_filename) == [1, 2]
     assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
