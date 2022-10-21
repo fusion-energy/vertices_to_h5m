@@ -30,12 +30,13 @@ f = h5py.File("double_tet_touching_face.h5m", "w")
 all_triangles = np.vstack(triangle_groups)
 
 
-
 tstt = f.create_group("tstt")
 
 elements = tstt.create_group("elements")
 
-global_id = 1  # not sure if this is need, appears to count both triangles and coordinates
+global_id = (
+    1  # not sure if this is need, appears to count both triangles and coordinates
+)
 mesh_type = "Tri3"
 mesh_name = 2
 
@@ -66,7 +67,7 @@ elem_group.attrs.create("element_type", mesh_name, dtype=elem_dt)
 # compression_opts=4 #meshio defaults
 conn = elem_group.create_dataset(
     "connectivity",
-    data=all_triangles+1,  # node indices are 1 based in h5m
+    data=all_triangles + 1,  # node indices are 1 based in h5m
     # compression=compression,
     # compression_opts=compression_opts,
 )
@@ -74,15 +75,14 @@ conn = elem_group.create_dataset(
 conn.attrs.create("start_id", global_id)
 global_id += len(all_triangles)
 
-key='materials'
+key = "materials"
 tags = elem_group.create_group("tags")
 tags.create_dataset(
     key,
-    data=[0,0,0,0,1,1,1,1,1,1],
+    data=[0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
     # compression=compression,
     # compression_opts=compression_opts,
 )
-
 
 
 nodes = tstt.create_group("nodes")
