@@ -155,7 +155,7 @@ def vertices_to_h5m(
     triangle_groups: Iterable[Tuple[int, int, int]],
     material_tags: Iterable[str],
     h5m_filename="dagmc.h5m",
-    method="h5py",
+    method="pymoab",
 ):
     """Converts vertices and triangle sets into a tagged h5m file compatible
     with DAGMC enabled neutronics simulations
