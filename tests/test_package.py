@@ -126,13 +126,13 @@ def test_h5m_production_with_single_volume_list():
     # the index of the coordinate that make up the corner of a tet, normals need fixing
     triangle_groups = [[[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]]]
 
-    for method in ['pymoab', 'h5py']:
+    for method in ["pymoab", "h5py"]:
         vertices_to_h5m(
             vertices=vertices,
             triangle_groups=triangle_groups,
             material_tags=["mat1"],
             h5m_filename=test_h5m_filename,
-            method=method
+            method=method,
         )
 
         flux_value = transport_particles_on_h5m_geometry(
@@ -165,13 +165,13 @@ def test_h5m_production_with_single_volume_numpy():
     # the index of the coordinate that make up the corner of a tet, normals need fixing
     triangle_groups = [np.array([[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]])]
 
-    for method in ['pymoab', 'h5py']:
+    for method in ["pymoab", "h5py"]:
         vertices_to_h5m(
             vertices=vertices,
             triangle_groups=triangle_groups,
             material_tags=["mat1"],
             h5m_filename=test_h5m_filename,
-            method=method
+            method=method,
         )
 
         flux_value = transport_particles_on_h5m_geometry(
@@ -210,13 +210,13 @@ def test_h5m_production_with_two_touching_edges_numpy():
         np.array([[4, 5, 1], [4, 5, 2], [4, 1, 2], [5, 1, 2]]),
     ]
 
-    for method in ['pymoab', 'h5py']:
+    for method in ["pymoab", "h5py"]:
         vertices_to_h5m(
             vertices=vertices,
             triangle_groups=triangle_groups,
             material_tags=["mat1", "mat2"],
             h5m_filename=test_h5m_filename,
-            method=method
+            method=method,
         )
 
         flux_value = transport_particles_on_h5m_geometry(
@@ -255,13 +255,13 @@ def test_h5m_production_with_two_touching_edges_lists():
         [[4, 5, 1], [4, 5, 2], [4, 1, 2], [5, 1, 2]],
     ]
 
-    for method in ['pymoab', 'h5py']:
+    for method in ["pymoab", "h5py"]:
         vertices_to_h5m(
             vertices=vertices,
             triangle_groups=triangle_groups,
             material_tags=["mat1", "mat2"],
             h5m_filename=test_h5m_filename,
-            method=method
+            method=method,
         )
 
         flux_value = transport_particles_on_h5m_geometry(
@@ -303,13 +303,13 @@ def test_h5m_production_with_two_touching_vertex_numpy():
         np.array([[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]]),
     ]
 
-    for method in ['pymoab', 'h5py']:
+    for method in ["pymoab", "h5py"]:
         vertices_to_h5m(
             vertices=vertices,
             triangle_groups=triangle_groups,
             material_tags=["mat1", "mat2"],
             h5m_filename=test_h5m_filename,
-            method=method
+            method=method,
         )
 
         flux_value = transport_particles_on_h5m_geometry(
@@ -347,13 +347,13 @@ def test_h5m_production_with_two_touching_vertex_list():
         [[0, 4, 5], [6, 4, 5], [0, 5, 6], [0, 4, 6]],
         [[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]],
     ]
-    for method in ['pymoab', 'h5py']:
+    for method in ["pymoab", "h5py"]:
         vertices_to_h5m(
             vertices=vertices,
             triangle_groups=triangle_groups,
             material_tags=["mat1", "mat2"],
             h5m_filename=test_h5m_filename,
-            method=method
+            method=method,
         )
 
         flux_value = transport_particles_on_h5m_geometry(
@@ -394,13 +394,13 @@ def test_h5m_production_with_two_touching_face_numpy():
         np.array([[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]]),
         np.array([[1, 2, 3], [1, 3, 4], [3, 5, 2], [1, 2, 4], [2, 4, 5], [3, 5, 4]]),
     ]
-    for method in ['pymoab', 'h5py']:
+    for method in ["pymoab", "h5py"]:
         vertices_to_h5m(
             vertices=vertices,
             triangle_groups=triangle_groups,
             material_tags=["mat1", "mat2"],
             h5m_filename=test_h5m_filename,
-            method=method
+            method=method,
         )
 
         flux_value = transport_particles_on_h5m_geometry(
