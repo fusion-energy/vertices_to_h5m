@@ -1,4 +1,3 @@
-
 import numpy as np
 from pathlib import Path
 import dagmc_h5m_file_inspector as di
@@ -110,8 +109,6 @@ def transport_particles_on_h5m_geometry(
     return flux_tally_result
 
 
-
-
 @pytest.mark.parametrize("filename", ["h5py_two_volumes.h5m", "pymoab_two_volumes.h5m"])
 def test_h5m_files_produced_contain_exspected_tags(filename):
 
@@ -122,6 +119,7 @@ def test_h5m_files_produced_contain_exspected_tags(filename):
         1: "mat1",
         2: "mat2",
     }
+
 
 @pytest.mark.parametrize("filename", ["h5py_two_volumes.h5m", "pymoab_two_volumes.h5m"])
 def test_h5m_files_produced_work_in_transport(filename):
