@@ -4,14 +4,7 @@ from vertices_to_h5m import vertices_to_h5m
 
 
 print('started')
-vertices = np.array(
-    [
-        [0.0, 0.0, 0.0],
-        [1.0, 0.0, 0.0],
-        [0.0, 1.0, 0.0],
-        [0.0, 0.0, 1.0],
-    ]
-)
+
 
 vertices = np.array(
     [
