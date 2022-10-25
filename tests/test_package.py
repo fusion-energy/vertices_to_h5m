@@ -109,8 +109,8 @@ def transport_particles_on_h5m_geometry(
 
     return flux_tally_result
 
-
-def test_h5m_production_with_single_volume_list():
+@pytest.mark.parametrize('method', ["pymoab", "h5py"])
+def test_h5m_production_with_single_volume_list(method):
     """The simplest geometry, a single 4 sided shape with lists instead of np arrays"""
 
     test_h5m_filename = "single_tet.h5m"
@@ -126,27 +126,28 @@ def test_h5m_production_with_single_volume_list():
     # the index of the coordinate that make up the corner of a tet, normals need fixing
     triangle_groups = [[[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]]]
 
-    for method in ["pymoab", "h5py"]:
-        vertices_to_h5m(
-            vertices=vertices,
-            triangle_groups=triangle_groups,
-            material_tags=["mat1"],
-            h5m_filename=test_h5m_filename,
-            method=method,
-        )
+    vertices_to_h5m(
+        vertices=vertices,
+        triangle_groups=triangle_groups,
+        material_tags=["mat1"],
+        h5m_filename=test_h5m_filename,
+        method=method,
+    )
 
-        flux_value = transport_particles_on_h5m_geometry(
-            h5m_filename=test_h5m_filename,
-            material_tags=["mat1"],
-        )
-        assert flux_value == pytest.approx(9994.523679063743)
-        assert Path(test_h5m_filename).is_file()
-        assert di.get_volumes_from_h5m(test_h5m_filename) == [1]
-        assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1"]
-        assert di.get_volumes_and_materials_from_h5m(test_h5m_filename) == {1: "mat1"}
+    assert Path(test_h5m_filename).is_file()
+    assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1"]
+    assert di.get_volumes_from_h5m(test_h5m_filename) == [1]
+    assert di.get_volumes_and_materials_from_h5m(test_h5m_filename) == {1: "mat1"}
+
+    flux_value = transport_particles_on_h5m_geometry(
+        h5m_filename=test_h5m_filename,
+        material_tags=["mat1"],
+    )
+    assert flux_value == pytest.approx(9994.523679063743)
 
 
-def test_h5m_production_with_single_volume_numpy():
+@pytest.mark.parametrize('method', ["pymoab", "h5py"])
+def test_h5m_production_with_single_volume_numpy(method):
     """The simplest geometry, a single 4 sided shape"""
 
     test_h5m_filename = "single_tet.h5m"
@@ -165,28 +166,28 @@ def test_h5m_production_with_single_volume_numpy():
     # the index of the coordinate that make up the corner of a tet, normals need fixing
     triangle_groups = [np.array([[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]])]
 
-    for method in ["pymoab", "h5py"]:
-        vertices_to_h5m(
-            vertices=vertices,
-            triangle_groups=triangle_groups,
-            material_tags=["mat1"],
-            h5m_filename=test_h5m_filename,
-            method=method,
-        )
+    vertices_to_h5m(
+        vertices=vertices,
+        triangle_groups=triangle_groups,
+        material_tags=["mat1"],
+        h5m_filename=test_h5m_filename,
+        method=method,
+    )
+    assert Path(test_h5m_filename).is_file()
+    assert di.get_volumes_from_h5m(test_h5m_filename) == [1]
+    assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1"]
+    assert di.get_volumes_and_materials_from_h5m(test_h5m_filename) == {1: "mat1"}
 
-        flux_value = transport_particles_on_h5m_geometry(
-            h5m_filename=test_h5m_filename,
-            material_tags=["mat1"],
-        )
+    flux_value = transport_particles_on_h5m_geometry(
+        h5m_filename=test_h5m_filename,
+        material_tags=["mat1"],
+    )
 
-        assert flux_value == pytest.approx(9994.523679063743)
-        assert Path(test_h5m_filename).is_file()
-        assert di.get_volumes_from_h5m(test_h5m_filename) == [1]
-        assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1"]
-        assert di.get_volumes_and_materials_from_h5m(test_h5m_filename) == {1: "mat1"}
+    assert flux_value == pytest.approx(9994.523679063743)
 
 
-def test_h5m_production_with_two_touching_edges_numpy():
+@pytest.mark.parametrize('method', ["pymoab", "h5py"])
+def test_h5m_production_with_two_touching_edges_numpy(method):
     """Two 4 sided shapes that share and edge"""
 
     test_h5m_filename = "double_tet.h5m"
@@ -210,31 +211,30 @@ def test_h5m_production_with_two_touching_edges_numpy():
         np.array([[4, 5, 1], [4, 5, 2], [4, 1, 2], [5, 1, 2]]),
     ]
 
-    for method in ["pymoab", "h5py"]:
-        vertices_to_h5m(
-            vertices=vertices,
-            triangle_groups=triangle_groups,
-            material_tags=["mat1", "mat2"],
-            h5m_filename=test_h5m_filename,
-            method=method,
-        )
+    vertices_to_h5m(
+        vertices=vertices,
+        triangle_groups=triangle_groups,
+        material_tags=["mat1", "mat2"],
+        h5m_filename=test_h5m_filename,
+        method=method,
+    )
 
-        flux_value = transport_particles_on_h5m_geometry(
-            h5m_filename=test_h5m_filename,
-            material_tags=["mat1", "mat2"],
-        )
+    assert Path(test_h5m_filename).is_file()
+    assert di.get_volumes_from_h5m(test_h5m_filename) == [1, 2]
+    assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
+    assert di.get_volumes_and_materials_from_h5m(test_h5m_filename) == {
+        1: "mat1",
+        2: "mat2",
+    }
+    flux_value = transport_particles_on_h5m_geometry(
+        h5m_filename=test_h5m_filename,
+        material_tags=["mat1", "mat2"],
+    )
 
-        assert flux_value == pytest.approx(9992.03209797692)
-        assert Path(test_h5m_filename).is_file()
-        assert di.get_volumes_from_h5m(test_h5m_filename) == [1, 2]
-        assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
-        assert di.get_volumes_and_materials_from_h5m(test_h5m_filename) == {
-            1: "mat1",
-            2: "mat2",
-        }
+    assert flux_value == pytest.approx(9992.03209797692)
 
-
-def test_h5m_production_with_two_touching_edges_lists():
+@pytest.mark.parametrize('method', ["pymoab", "h5py"])
+def test_h5m_production_with_two_touching_edges_lists(method):
     """Two 4 sided shapes that share and edge"""
 
     test_h5m_filename = "double_tet.h5m"
@@ -255,31 +255,31 @@ def test_h5m_production_with_two_touching_edges_lists():
         [[4, 5, 1], [4, 5, 2], [4, 1, 2], [5, 1, 2]],
     ]
 
-    for method in ["pymoab", "h5py"]:
-        vertices_to_h5m(
-            vertices=vertices,
-            triangle_groups=triangle_groups,
-            material_tags=["mat1", "mat2"],
-            h5m_filename=test_h5m_filename,
-            method=method,
-        )
 
-        flux_value = transport_particles_on_h5m_geometry(
-            h5m_filename=test_h5m_filename,
-            material_tags=["mat1", "mat2"],
-        )
+    vertices_to_h5m(
+        vertices=vertices,
+        triangle_groups=triangle_groups,
+        material_tags=["mat1", "mat2"],
+        h5m_filename=test_h5m_filename,
+        method=method,
+    )
 
-        assert flux_value == pytest.approx(9992.03209797692)
-        assert Path(test_h5m_filename).is_file()
-        assert di.get_volumes_from_h5m(test_h5m_filename) == [1, 2]
-        assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
-        assert di.get_volumes_and_materials_from_h5m(test_h5m_filename) == {
-            1: "mat1",
-            2: "mat2",
-        }
+    assert Path(test_h5m_filename).is_file()
+    assert di.get_volumes_from_h5m(test_h5m_filename) == [1, 2]
+    assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
+    assert di.get_volumes_and_materials_from_h5m(test_h5m_filename) == {
+        1: "mat1",
+        2: "mat2",
+    }
+    flux_value = transport_particles_on_h5m_geometry(
+        h5m_filename=test_h5m_filename,
+        material_tags=["mat1", "mat2"],
+    )
 
+    assert flux_value == pytest.approx(9992.03209797692)
 
-def test_h5m_production_with_two_touching_vertex_numpy():
+@pytest.mark.parametrize('method', ["pymoab", "h5py"])
+def test_h5m_production_with_two_touching_vertex_numpy(method):
     """Two 4 sided shapes that share an single vertex"""
 
     test_h5m_filename = "touching_vertex_tets.h5m"
@@ -303,31 +303,30 @@ def test_h5m_production_with_two_touching_vertex_numpy():
         np.array([[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]]),
     ]
 
-    for method in ["pymoab", "h5py"]:
-        vertices_to_h5m(
-            vertices=vertices,
-            triangle_groups=triangle_groups,
-            material_tags=["mat1", "mat2"],
-            h5m_filename=test_h5m_filename,
-            method=method,
-        )
+    vertices_to_h5m(
+        vertices=vertices,
+        triangle_groups=triangle_groups,
+        material_tags=["mat1", "mat2"],
+        h5m_filename=test_h5m_filename,
+        method=method,
+    )
 
-        flux_value = transport_particles_on_h5m_geometry(
-            h5m_filename=test_h5m_filename,
-            material_tags=["mat1", "mat2"],
-        )
+    assert Path(test_h5m_filename).is_file()
+    assert di.get_volumes_from_h5m(test_h5m_filename) == [1, 2]
+    assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
+    assert di.get_volumes_and_materials_from_h5m(test_h5m_filename) == {
+        1: "mat1",
+        2: "mat2",
+    }
+    flux_value = transport_particles_on_h5m_geometry(
+        h5m_filename=test_h5m_filename,
+        material_tags=["mat1", "mat2"],
+    )
 
-        assert flux_value == pytest.approx(9992.93026368412)
-        assert Path(test_h5m_filename).is_file()
-        assert di.get_volumes_from_h5m(test_h5m_filename) == [1, 2]
-        assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
-        assert di.get_volumes_and_materials_from_h5m(test_h5m_filename) == {
-            1: "mat1",
-            2: "mat2",
-        }
+    assert flux_value == pytest.approx(9992.93026368412)
 
-
-def test_h5m_production_with_two_touching_vertex_list():
+@pytest.mark.parametrize('method', ["pymoab", "h5py"])
+def test_h5m_production_with_two_touching_vertex_list(method):
     """Two 4 sided shapes that share an single vertex"""
 
     test_h5m_filename = "touching_vertex_tets.h5m"
@@ -347,31 +346,31 @@ def test_h5m_production_with_two_touching_vertex_list():
         [[0, 4, 5], [6, 4, 5], [0, 5, 6], [0, 4, 6]],
         [[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]],
     ]
-    for method in ["pymoab", "h5py"]:
-        vertices_to_h5m(
-            vertices=vertices,
-            triangle_groups=triangle_groups,
-            material_tags=["mat1", "mat2"],
-            h5m_filename=test_h5m_filename,
-            method=method,
-        )
 
-        flux_value = transport_particles_on_h5m_geometry(
-            h5m_filename=test_h5m_filename,
-            material_tags=["mat1", "mat2"],
-        )
+    vertices_to_h5m(
+        vertices=vertices,
+        triangle_groups=triangle_groups,
+        material_tags=["mat1", "mat2"],
+        h5m_filename=test_h5m_filename,
+        method=method,
+    )
 
-        assert flux_value == pytest.approx(9992.93026368412)
-        assert Path(test_h5m_filename).is_file()
-        assert di.get_volumes_from_h5m(test_h5m_filename) == [1, 2]
-        assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
-        assert di.get_volumes_and_materials_from_h5m(test_h5m_filename) == {
-            1: "mat1",
-            2: "mat2",
-        }
+    assert Path(test_h5m_filename).is_file()
+    assert di.get_volumes_from_h5m(test_h5m_filename) == [1, 2]
+    assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
+    assert di.get_volumes_and_materials_from_h5m(test_h5m_filename) == {
+        1: "mat1",
+        2: "mat2",
+    }
+    flux_value = transport_particles_on_h5m_geometry(
+        h5m_filename=test_h5m_filename,
+        material_tags=["mat1", "mat2"],
+    )
 
+    assert flux_value == pytest.approx(9992.93026368412)
 
-def test_h5m_production_with_two_touching_face_numpy():
+@pytest.mark.parametrize('method', ["pymoab", "h5py"])
+def test_h5m_production_with_two_touching_face_numpy(method):
     """Two 4 sided shapes that share a face"""
 
     test_h5m_filename = "double_tet_touching_face.h5m"
@@ -394,25 +393,25 @@ def test_h5m_production_with_two_touching_face_numpy():
         np.array([[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]]),
         np.array([[1, 2, 3], [1, 3, 4], [3, 5, 2], [1, 2, 4], [2, 4, 5], [3, 5, 4]]),
     ]
-    for method in ["pymoab", "h5py"]:
-        vertices_to_h5m(
-            vertices=vertices,
-            triangle_groups=triangle_groups,
-            material_tags=["mat1", "mat2"],
-            h5m_filename=test_h5m_filename,
-            method=method,
-        )
 
-        flux_value = transport_particles_on_h5m_geometry(
-            h5m_filename=test_h5m_filename,
-            material_tags=["mat1", "mat2"],
-        )
+    vertices_to_h5m(
+        vertices=vertices,
+        triangle_groups=triangle_groups,
+        material_tags=["mat1", "mat2"],
+        h5m_filename=test_h5m_filename,
+        method=method,
+    )
+    assert Path(test_h5m_filename).is_file()
+    assert di.get_volumes_from_h5m(test_h5m_filename) == [1, 2]
+    assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
+    assert di.get_volumes_and_materials_from_h5m(test_h5m_filename) == {
+        1: "mat1",
+        2: "mat2",
+    }
 
-        assert flux_value == pytest.approx(9972.750052518444)
-        assert Path(test_h5m_filename).is_file()
-        assert di.get_volumes_from_h5m(test_h5m_filename) == [1, 2]
-        assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
-        assert di.get_volumes_and_materials_from_h5m(test_h5m_filename) == {
-            1: "mat1",
-            2: "mat2",
-        }
+    flux_value = transport_particles_on_h5m_geometry(
+        h5m_filename=test_h5m_filename,
+        material_tags=["mat1", "mat2"],
+    )
+
+    assert flux_value == pytest.approx(9972.750052518444)

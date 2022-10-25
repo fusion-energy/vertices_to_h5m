@@ -13,6 +13,7 @@ vertices = np.array(
 
 triangles = np.array([[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]])
 
+
 f = h5py.File("one_volume.h5m", "w")
 
 tstt = f.create_group("tstt")

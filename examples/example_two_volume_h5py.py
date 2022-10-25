@@ -1,6 +1,7 @@
 import numpy as np
 import h5py
 
+print('started')
 vertices = np.array(
     [
         [0.0, 0.0, 0.0],
@@ -25,7 +26,7 @@ triangle_groups = [
     np.array([[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]]),
     np.array([[1, 2, 3], [1, 3, 4], [3, 5, 2], [1, 2, 4], [2, 4, 5], [3, 5, 4]]),
 ]
-f = h5py.File("double_tet_touching_face.h5m", "w")
+f = h5py.File("h5py_two_volumes.h5m", "w")
 
 all_triangles = np.vstack(triangle_groups)
 
@@ -94,3 +95,5 @@ global_id += len(vertices)
 sets = tstt.create_group("sets")
 
 tags = tstt.create_group("tags")
+
+print('finished')

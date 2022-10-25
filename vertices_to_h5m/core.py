@@ -288,7 +288,7 @@ def vertices_to_h5m_pymoab(
 ):
 
     if len(material_tags) != len(triangle_groups):
-        msg = f"The number of material_tags provided is {len(material_tags)} and the number of sets of triangles is {len(triangles)}. You must provide one material_tag for every triangle set"
+        msg = f"The number of material_tags provided is {len(material_tags)} and the number of sets of triangles is {len(triangle_groups)}. You must provide one material_tag for every triangle set"
         raise ValueError(msg)
 
     vertices_floats = check_vertices(vertices)
