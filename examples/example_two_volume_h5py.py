@@ -172,17 +172,20 @@ sets_group.create_dataset(
 def hex_encode(string_to_encode: str) -> str:
     """encodes a string in hex format and adds : between characters"""
     hex_string = string_to_encode.encode("utf-8").hex()
-    deliminated_string = ':'.join(hex_string[i:i+2] for i in range(0, len(hex_string), 2))
+    deliminated_string = ":".join(
+        hex_string[i : i + 2] for i in range(0, len(hex_string), 2)
+    )
     # TODO pad the string up to the correct number of characters with 00: entries
     return deliminated_string
+
 
 tags_tstt_group = tstt_group.create_group("tags")
 cat = tags_tstt_group.create_group("CATEGORY")
 cat.create_dataset(
     "values",
-        # appears to repeat twice as we have two volumes
-        # these words appear in hex format with padding in the h5m file
-        # for example 53:75:72:66:61:63:65:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00
+    # appears to repeat twice as we have two volumes
+    # these words appear in hex format with padding in the h5m file
+    # for example 53:75:72:66:61:63:65:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00
     data=[
         hex_encode("Surface"),
         "Volume",
