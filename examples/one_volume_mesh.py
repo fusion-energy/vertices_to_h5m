@@ -20,10 +20,9 @@ vertices_to_h5m(
     triangle_groups=triangles,
     material_tags=["mat1"],
     h5m_filename="one_volume.h5m",
-    method='h5py'
+    method="h5py",
 )
 
 import os
 
 os.system("mbconvert one_volume.h5m one_volume.vtk")
-

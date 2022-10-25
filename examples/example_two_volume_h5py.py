@@ -1,7 +1,7 @@
 import numpy as np
 import h5py
 
-print('started')
+print("started")
 vertices = np.array(
     [
         [0.0, 0.0, 0.0],
@@ -96,4 +96,4 @@ sets = tstt.create_group("sets")
 
 tags = tstt.create_group("tags")
 
-print('finished')
+print("finished")

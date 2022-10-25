@@ -3,7 +3,7 @@ import os
 from vertices_to_h5m import vertices_to_h5m
 
 
-print('started')
+print("started")
 vertices = np.array(
     [
         [0.0, 0.0, 0.0],

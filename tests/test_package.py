@@ -109,7 +109,8 @@ def transport_particles_on_h5m_geometry(
 
     return flux_tally_result
 
-@pytest.mark.parametrize('method', ["pymoab", "h5py"])
+
+@pytest.mark.parametrize("method", ["pymoab", "h5py"])
 def test_h5m_production_with_single_volume_list(method):
     """The simplest geometry, a single 4 sided shape with lists instead of np arrays"""
 
@@ -146,7 +147,7 @@ def test_h5m_production_with_single_volume_list(method):
     assert flux_value == pytest.approx(9994.523679063743)
 
 
-@pytest.mark.parametrize('method', ["pymoab", "h5py"])
+@pytest.mark.parametrize("method", ["pymoab", "h5py"])
 def test_h5m_production_with_single_volume_numpy(method):
     """The simplest geometry, a single 4 sided shape"""
 
@@ -186,7 +187,7 @@ def test_h5m_production_with_single_volume_numpy(method):
     assert flux_value == pytest.approx(9994.523679063743)
 
 
-@pytest.mark.parametrize('method', ["pymoab", "h5py"])
+@pytest.mark.parametrize("method", ["pymoab", "h5py"])
 def test_h5m_production_with_two_touching_edges_numpy(method):
     """Two 4 sided shapes that share and edge"""
 
@@ -233,7 +234,8 @@ def test_h5m_production_with_two_touching_edges_numpy(method):
 
     assert flux_value == pytest.approx(9992.03209797692)
 
-@pytest.mark.parametrize('method', ["pymoab", "h5py"])
+
+@pytest.mark.parametrize("method", ["pymoab", "h5py"])
 def test_h5m_production_with_two_touching_edges_lists(method):
     """Two 4 sided shapes that share and edge"""
 
@@ -254,7 +256,6 @@ def test_h5m_production_with_two_touching_edges_lists(method):
         [[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]],
         [[4, 5, 1], [4, 5, 2], [4, 1, 2], [5, 1, 2]],
     ]
-
 
     vertices_to_h5m(
         vertices=vertices,
@@ -278,7 +279,8 @@ def test_h5m_production_with_two_touching_edges_lists(method):
 
     assert flux_value == pytest.approx(9992.03209797692)
 
-@pytest.mark.parametrize('method', ["pymoab", "h5py"])
+
+@pytest.mark.parametrize("method", ["pymoab", "h5py"])
 def test_h5m_production_with_two_touching_vertex_numpy(method):
     """Two 4 sided shapes that share an single vertex"""
 
@@ -325,7 +327,8 @@ def test_h5m_production_with_two_touching_vertex_numpy(method):
 
     assert flux_value == pytest.approx(9992.93026368412)
 
-@pytest.mark.parametrize('method', ["pymoab", "h5py"])
+
+@pytest.mark.parametrize("method", ["pymoab", "h5py"])
 def test_h5m_production_with_two_touching_vertex_list(method):
     """Two 4 sided shapes that share an single vertex"""
 
@@ -369,7 +372,8 @@ def test_h5m_production_with_two_touching_vertex_list(method):
 
     assert flux_value == pytest.approx(9992.93026368412)
 
-@pytest.mark.parametrize('method', ["pymoab", "h5py"])
+
+@pytest.mark.parametrize("method", ["pymoab", "h5py"])
 def test_h5m_production_with_two_touching_face_numpy(method):
     """Two 4 sided shapes that share a face"""
 
