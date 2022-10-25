@@ -160,7 +160,7 @@ sets_group.create_dataset(
         # }
     ],
 )
-sets.create_dataset(
+sets_group.create_dataset(
     "parents", data=[[24, 27]]  # TODO not sure where these numbers come from
 )
 sets_group.create_dataset(
@@ -168,15 +168,23 @@ sets_group.create_dataset(
     data=[[1, 1, -1, 2, 2, -1, -1]],  # TODO not sure where these numbers come from
 )
 
+
+def hex_encode(string_to_encode: str) -> str:
+    """encodes a string in hex format and adds : between characters"""
+    hex_string = string_to_encode.encode("utf-8").hex()
+    deliminated_string = ':'.join(hex_string[i:i+2] for i in range(0, len(hex_string), 2))
+    # TODO pad the string up to the correct number of characters with 00: entries
+    return deliminated_string
+
 tags_tstt_group = tstt_group.create_group("tags")
 cat = tags_tstt_group.create_group("CATEGORY")
 cat.create_dataset(
     "values",
-    data=[
         # appears to repeat twice as we have two volumes
         # these words appear in hex format with padding in the h5m file
         # for example 53:75:72:66:61:63:65:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00
-        "Surface",
+    data=[
+        hex_encode("Surface"),
         "Volume",
         "Group",
         "Surface",
@@ -199,8 +207,8 @@ cat = tags_tstt_group.create_group("values")
 # dset.attrs["attribute_name"] = np.void(binary_blob)
 # out = dset.attrs["attribute_name"]
 
-name = tags_tstt_group.create_group("NAME")
-name.create_dataset(
+name_group = tags_tstt_group.create_group("NAME")
+name_group.create_dataset(
     "values",
     # TODO needs padding and nesting as pymoab does it
     data=[np.void(b"mat:mat1"), np.void(b"mat:mat2")],
