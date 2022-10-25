@@ -51,15 +51,13 @@ f = h5py.File("h5py_two_volumes.h5m", "w")
 all_triangles = np.vstack(triangle_groups)
 
 
-tstt = f.create_group("tstt")
+tstt_group = f.create_group("tstt")
 
-elements = tstt.create_group("elements")
+group_elements = tstt_group.create_group("elements")
 
 global_id = (
     1  # appears to count both triangles and coordinates
 )
-mesh_type = "Tri3"
-mesh_name = 2
 
 elem_dt = h5py.special_dtype(
     enum=(
@@ -81,24 +79,25 @@ elem_dt = h5py.special_dtype(
 
 # for triangles in triangle_groups:
 
-elem_group = elements.create_group(mesh_type)
-elem_group.attrs.create("element_type", mesh_name, dtype=elem_dt)
+mesh_name = 2
+tri3_group = group_elements.create_group("Tri3")
+tri3_group.attrs.create("element_type", mesh_name, dtype=elem_dt)
 
 # compression="gzip"
 # compression_opts=4 #meshio defaults
-conn = elem_group.create_dataset(
+connectivity_group = tri3_group.create_dataset(
     "connectivity",
     data=all_triangles + 1,  # node indices are 1 based in h5m
     # compression=compression,
     # compression_opts=compression_opts,
 )
 
-conn.attrs.create("start_id", global_id)
+connectivity_group.attrs.create("start_id", global_id)
 global_id += len(all_triangles)
 
 
-tags = elem_group.create_group("tags")
-tags.create_dataset(
+tags_tri3_group = tri3_group.create_group("tags")
+tags_tri3_group.create_dataset(
     "GLOBAL_ID",
     data=[-1]*len(vertices),
     # compression=compression,
@@ -106,33 +105,33 @@ tags.create_dataset(
 )
 
 
-nodes = tstt.create_group("nodes")
-tags = nodes.create_group("tags")
-tags.create_dataset(
+nodes_group = tstt_group.create_group("nodes")
+tags_nodes_group = nodes_group.create_group("tags")
+tags_nodes_group.create_dataset(
     "materials",
     data=[-1]*len(vertices),
     # compression=compression,
     # compression_opts=compression_opts,
 )
 
-coords = nodes.create_dataset("coordinates", data=vertices)
-coords.attrs.create("start_id", global_id)
+coordinates_group = nodes_group.create_dataset("coordinates", data=vertices)
+coordinates_group.attrs.create("start_id", global_id)
 global_id += len(vertices)
 
-sets = tstt.create_group("sets")
-sets.create_dataset(
+sets_group = tstt_group.create_group("sets")
+sets_group.create_dataset(
     "children",
     data=[
-        [23,26] # TODO not sure where these numbers come from, automate the production of these numbers
+        [23, 26] # TODO not sure where these numbers come from, automate the production of these numbers
     ]
 )
-sets.create_dataset(
+sets_group.create_dataset(
     "contents",
     data=[
         [ 1, 6, 13, 4, 24, 7, 6, 17, 6, 27, 1, 28]  # TODO not sure where these numbers come from
     ]
 )
-sets.create_dataset(
+sets_group.create_dataset(
     "list",
     data=[
         # TODO make an entry like this, not sure what these numbers are based on
@@ -147,21 +146,21 @@ sets.create_dataset(
         # }
     ]
 )
-sets.create_dataset(
+sets_group.create_dataset(
     "parents",
     data=[
         [ 24, 27]  # TODO not sure where these numbers come from
     ]
 )
-sets.create_dataset(
+sets_group.create_dataset(
     "GLOBAL_ID",
     data=[
         [ 1, 1, -1, 2, 2, -1, -1 ]  # TODO not sure where these numbers come from
     ]
 )
 
-tags = tstt.create_group("tags")
-cat = tags.create_group("CATEGORY")
+tags_tstt_group = tstt_group.create_group("tags")
+cat = tags_tstt_group.create_group("CATEGORY")
 cat.create_dataset(
     "values",
     data=[
@@ -173,9 +172,9 @@ cat.create_dataset(
     ]
 )
 
-cat = tags.create_group("id_list")
+cat = tags_tstt_group.create_group("id_list")
 # TODO populate group
-cat = tags.create_group("values")
+cat = tags_tstt_group.create_group("values")
 # TODO populate group
 
 # tried these two methods of making a list in the h5m dataset
@@ -187,7 +186,7 @@ cat = tags.create_group("values")
 # dset.attrs["attribute_name"] = np.void(binary_blob)
 # out = dset.attrs["attribute_name"]
 
-name = tags.create_group("NAME")
+name = tags_tstt_group.create_group("NAME")
 name.create_dataset(
     "values",
     # TODO needs padding and nesting as pymoab does it
@@ -195,6 +194,6 @@ name.create_dataset(
 )
 
 
-tstt.attrs.create('max_id', global_id)
+tstt_group.attrs.create('max_id', global_id)
 
 print("finished")
