@@ -2,16 +2,21 @@ import numpy as np
 import h5py
 import trimesh
 
+"""
+Creates a DAGMC compatible h5m file based on the H%M file format layout can be
+found here https://sigma.mcs.anl.gov/moab/h5m-file-format/
+"""
+
 print('started')
 
 vertices = np.array(
     [
-        [0.0, 0.0, 0.0],
-        [1.0, 0.0, 0.0],
-        [0.0, 1.0, 0.0],
-        [0.0, 0.0, 1.0],
-        [1.0, 0.0, 1.0],
-        [0.0, 1.0, 1.0],
+        [0.42, 0.42, 0.42],
+        [1.42, 0.42, 0.42],
+        [0.42, 1.42, 0.42],
+        [0.42, 0.42, 1.42],
+        [1.42, 0.42, 1.42],
+        [0.42, 1.42, 1.42],
     ]
 )
 
@@ -118,16 +123,42 @@ sets = tstt.create_group("sets")
 sets.create_dataset(
     "children",
     data=[
-        [23,26] # not sure where these numbers come from
+        [23,26] # TODO not sure where these numbers come from, automate the production of these numbers
     ]
 )
 sets.create_dataset(
     "contents",
     data=[
-        [ 1, 6, 13, 4, 24, 7, 6, 17, 6, 27, 1, 28]  # not sure where these numbers come from
+        [ 1, 6, 13, 4, 24, 7, 6, 17, 6, 27, 1, 28]  # TODO not sure where these numbers come from
     ]
 )
-
+sets.create_dataset(
+    "list",
+    data=[
+        # TODO make an entry like this, not sure what these numbers are based on
+        # {
+        # (0,0): 3, -1, 0, 10,
+        # (1,0): 3, 0, 0, 2,
+        # (2,0): 4, 0, 0, 2,
+        # (3,0): 8, 0, 1, 10,
+        # (4,0): 8, 1, 1, 2,
+        # (5,0): 9, 1, 1, 2,
+        # (6,0): 11, 1, 1, 10
+        # }
+    ]
+)
+sets.create_dataset(
+    "parents",
+    data=[
+        [ 24, 27]  # TODO not sure where these numbers come from
+    ]
+)
+sets.create_dataset(
+    "GLOBAL_ID",
+    data=[
+        [ 1, 1, -1, 2, 2, -1, -1 ]  # TODO not sure where these numbers come from
+    ]
+)
 
 tags = tstt.create_group("tags")
 cat = tags.create_group("CATEGORY")
@@ -142,9 +173,16 @@ cat.create_dataset(
     ]
 )
 
+cat = tags.create_group("id_list")
+# TODO populate group
+cat = tags.create_group("values")
+# TODO populate group
+
+# tried these two methods of making a list in the h5m dataset
+# metho 1
 # arr = np.array(['mat:mat1','mat:mat2'])
 # arr=arr.astype(h5py.opaque_dtype(arr.dtype))
-
+# method 2
 # binary_blob = b"mat:mat1"
 # dset.attrs["attribute_name"] = np.void(binary_blob)
 # out = dset.attrs["attribute_name"]
@@ -152,7 +190,8 @@ cat.create_dataset(
 name = tags.create_group("NAME")
 name.create_dataset(
     "values",
-    data=[np.void(b"mat:mat1"), np.void(b"mat:mat2")] # needs padding and nesting
+    # TODO needs padding and nesting as pymoab does it
+    data=[np.void(b"mat:mat1"), np.void(b"mat:mat2")]
 )
 
 
