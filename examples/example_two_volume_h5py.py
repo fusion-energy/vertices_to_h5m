@@ -207,6 +207,6 @@ name.create_dataset(
 )
 
 
-tstt_group.attrs.create('max_id', global_id)
+tstt_group.attrs.create("max_id", global_id)
 
 print("finished")
