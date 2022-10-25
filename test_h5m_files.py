@@ -1,4 +1,3 @@
-
 import numpy as np
 from pathlib import Path
 import dagmc_h5m_file_inspector as di
@@ -61,7 +60,7 @@ def transport_particles_on_h5m_geometry(
 
     # specifies the simulation computational intensity
     settings = openmc.Settings()
-    settings.batches = 10
+    settings.batches = 100
     settings.particles = 10000
     settings.inactive = 0
     settings.run_mode = "fixed source"
@@ -110,8 +109,6 @@ def transport_particles_on_h5m_geometry(
     return flux_tally_result
 
 
-
-
 @pytest.mark.parametrize("filename", ["h5py_two_volumes.h5m", "pymoab_two_volumes.h5m"])
 def test_h5m_files_produced_contain_exspected_tags(filename):
 
@@ -123,6 +120,7 @@ def test_h5m_files_produced_contain_exspected_tags(filename):
         2: "mat2",
     }
 
+
 @pytest.mark.parametrize("filename", ["h5py_two_volumes.h5m", "pymoab_two_volumes.h5m"])
 def test_h5m_files_produced_work_in_transport(filename):
 
@@ -131,4 +129,4 @@ def test_h5m_files_produced_work_in_transport(filename):
         material_tags=["mat1", "mat2"],
     )
 
-    assert flux_value == pytest.approx(9972.750052518444)
+    assert flux_value == pytest.approx(9997.392575425129)

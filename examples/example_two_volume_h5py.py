@@ -7,7 +7,7 @@ Creates a DAGMC compatible h5m file based on the H%M file format layout can be
 found here https://sigma.mcs.anl.gov/moab/h5m-file-format/
 """
 
-print('started')
+print("started")
 
 vertices = np.array(
     [
@@ -55,9 +55,7 @@ tstt_group = f.create_group("tstt")
 
 group_elements = tstt_group.create_group("elements")
 
-global_id = (
-    1  # appears to count both triangles and coordinates
-)
+global_id = 1  # appears to count both triangles and coordinates
 
 elem_dt = h5py.special_dtype(
     enum=(
@@ -99,7 +97,7 @@ global_id += len(all_triangles)
 tags_tri3_group = tri3_group.create_group("tags")
 tags_tri3_group.create_dataset(
     "GLOBAL_ID",
-    data=[-1]*len(vertices),
+    data=[-1] * len(vertices),
     # compression=compression,
     # compression_opts=compression_opts,
 )
@@ -109,7 +107,7 @@ nodes_group = tstt_group.create_group("nodes")
 tags_nodes_group = nodes_group.create_group("tags")
 tags_nodes_group.create_dataset(
     "materials",
-    data=[-1]*len(vertices),
+    data=[-1] * len(vertices),
     # compression=compression,
     # compression_opts=compression_opts,
 )
@@ -122,14 +120,30 @@ sets_group = tstt_group.create_group("sets")
 sets_group.create_dataset(
     "children",
     data=[
-        [23, 26] # TODO not sure where these numbers come from, automate the production of these numbers
-    ]
+        [
+            23,
+            26,
+        ]  # TODO not sure where these numbers come from, automate the production of these numbers
+    ],
 )
 sets_group.create_dataset(
     "contents",
     data=[
-        [ 1, 6, 13, 4, 24, 7, 6, 17, 6, 27, 1, 28]  # TODO not sure where these numbers come from
-    ]
+        [
+            1,
+            6,
+            13,
+            4,
+            24,
+            7,
+            6,
+            17,
+            6,
+            27,
+            1,
+            28,
+        ]  # TODO not sure where these numbers come from
+    ],
 )
 sets_group.create_dataset(
     "list",
@@ -144,19 +158,14 @@ sets_group.create_dataset(
         # (5,0): 9, 1, 1, 2,
         # (6,0): 11, 1, 1, 10
         # }
-    ]
+    ],
 )
-sets_group.create_dataset(
-    "parents",
-    data=[
-        [ 24, 27]  # TODO not sure where these numbers come from
-    ]
+sets.create_dataset(
+    "parents", data=[[24, 27]]  # TODO not sure where these numbers come from
 )
 sets_group.create_dataset(
     "GLOBAL_ID",
-    data=[
-        [ 1, 1, -1, 2, 2, -1, -1 ]  # TODO not sure where these numbers come from
-    ]
+    data=[[1, 1, -1, 2, 2, -1, -1]],  # TODO not sure where these numbers come from
 )
 
 tags_tstt_group = tstt_group.create_group("tags")
@@ -167,9 +176,13 @@ cat.create_dataset(
         # appears to repeat twice as we have two volumes
         # these words appear in hex format with padding in the h5m file
         # for example 53:75:72:66:61:63:65:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00
-        'Surface', 'Volume', 'Group',
-        'Surface', 'Volume', 'Group'
-    ]
+        "Surface",
+        "Volume",
+        "Group",
+        "Surface",
+        "Volume",
+        "Group",
+    ],
 )
 
 cat = tags_tstt_group.create_group("id_list")
@@ -190,7 +203,7 @@ name = tags_tstt_group.create_group("NAME")
 name.create_dataset(
     "values",
     # TODO needs padding and nesting as pymoab does it
-    data=[np.void(b"mat:mat1"), np.void(b"mat:mat2")]
+    data=[np.void(b"mat:mat1"), np.void(b"mat:mat2")],
 )
 
 
