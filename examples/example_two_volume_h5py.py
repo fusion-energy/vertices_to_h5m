@@ -20,16 +20,14 @@ triangle_groups = [
     np.array([[1, 2, 3], [1, 3, 4], [3, 5, 2], [1, 2, 4], [2, 4, 5], [3, 5, 4]]),
 ]
 
-# mat_tag
-
+# commented out for now as this just reorders the nodes in a specific order so they point outwards
+#
 # def fix_normals(vertices, triangles_in_each_volume):
-
 #     fixed_triangles = []
 #     for triangles in triangles_in_each_volume:
 #         fixed_triangles.append(fix_normal(vertices, triangles))
 #     return fixed_triangles
-
-
+#
 # def fix_normal(vertices, triangles):
 
 #     # for triangles in triangles_in_each_volume:
@@ -38,7 +36,7 @@ triangle_groups = [
 #     mesh.fix_normals()
 
 #     return mesh.faces
-
+#
 # triangles = fix_normals(
 #     vertices=vertices, triangles_in_each_volume=triangle_groups
 # )
@@ -53,7 +51,7 @@ tstt = f.create_group("tstt")
 elements = tstt.create_group("elements")
 
 global_id = (
-    1  # not sure if this is need, appears to count both triangles and coordinates
+    1  # appears to count both triangles and coordinates
 )
 mesh_type = "Tri3"
 mesh_name = 2
@@ -136,7 +134,11 @@ cat = tags.create_group("CATEGORY")
 cat.create_dataset(
     "values",
     data=[
-        'surface', 'Volume' # ... 6 entries in total
+        # appears to repeat twice as we have two volumes
+        # these words appear in hex format with padding in the h5m file
+        # for example 53:75:72:66:61:63:65:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00
+        'Surface', 'Volume', 'Group',
+        'Surface', 'Volume', 'Group'
     ]
 )
 
