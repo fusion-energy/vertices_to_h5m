@@ -235,21 +235,21 @@ def vertices_to_h5m_h5py(
 
     tstt["elemtypes"] = h5py.enum_dtype(elems)
 
-    elem_group = elements.create_group("Tri3")
+    tri3_group = elements.create_group("Tri3")
 
-    elem_group.attrs.create("element_type", elems["Tri"], dtype=tstt["elemtypes"])
+    tri3_group.attrs.create("element_type", elems["Tri"], dtype=tstt["elemtypes"])
 
-    conn = elem_group.create_dataset(
+    connectivity_group = tri3_group.create_dataset(
         "connectivity",
         data=all_triangles + 1,  # node indices are 1 based in h5m
         dtype=np.uint64,
     )
 
-    conn.attrs.create("start_id", global_id)
+    connectivity_group.attrs.create("start_id", global_id)
     global_id += len(all_triangles)
 
-    tags = elem_group.create_group("tags")
-    tags.create_dataset("GLOBAL_ID", data=tag_data)
+    tags_tri3_group = tri3_group.create_group("tags")
+    tags_tri3_group.create_dataset("GLOBAL_ID", data=tag_data)
 
     nodes = tstt.create_group("nodes")
 
@@ -257,21 +257,21 @@ def vertices_to_h5m_h5py(
     coords.attrs.create("start_id", global_id)
     global_id += len(vertices)
 
-    sets = tstt.create_group("sets")
+    sets_group = tstt.create_group("sets")
 
-    tags = tstt.create_group("tags")
+    tags_tstt_group = tstt.create_group("tags")
 
-    # cat_group = tags.create_group("CATEGORY")
+    # cat_group = tags_tstt_group.create_group("CATEGORY")
     # cat_group.attrs.create("class", 1, dtype=np.int32)
     # cat_group.create_dataset()
 
-    diri_group = tags.create_group("DIRICHLET_SET")
+    diri_group = tags_tstt_group.create_group("DIRICHLET_SET")
     diri_group["type"] = np.dtype("i4")
     diri_group.attrs.create("class", 1, dtype=np.int32)
     diri_group.attrs.create("default", -1, dtype=diri_group["type"])
     diri_group.attrs.create("global", -1, dtype=diri_group["type"])
 
-    geom_group = tags.create_group("GEOM_DIMENSION")
+    geom_group = tags_tstt_group.create_group("GEOM_DIMENSION")
     geom_group["type"] = np.dtype("i4")
     geom_group.attrs.create("class", 1, dtype=np.int32)
     geom_group.attrs.create("default", -1, dtype=geom_group["type"])
@@ -279,13 +279,13 @@ def vertices_to_h5m_h5py(
     geom_group.create_dataset("id_list", data=[9, 10, 11], dtype=np.uint64)
     geom_group.create_dataset("values", data=[2, 3, 4], dtype=geom_group["type"])
 
-    gid_group = tags.create_group("GLOBAL_ID")
+    gid_group = tags_tstt_group.create_group("GLOBAL_ID")
     gid_group["type"] = np.dtype("i4")
     gid_group.attrs.create("class", 2, dtype=np.int32)
     gid_group.attrs.create("default", -1, dtype=gid_group["type"])
     gid_group.attrs.create("global", -1, dtype=gid_group["type"])
 
-    ms_group = tags.create_group("MATERIAL_SET")
+    ms_group = tags_tstt_group.create_group("MATERIAL_SET")
     ms_group["type"] = np.dtype("i4")
     ms_group.attrs.create("class", 1, dtype=np.int32)
     ms_group.attrs.create("default", -1, dtype=ms_group["type"])
