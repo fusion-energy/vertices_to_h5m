@@ -1,5 +1,6 @@
-from vertices_to_h5m import vertices_to_h5m
 import numpy as np
+
+from vertices_to_h5m import vertices_to_h5m
 
 vertices = np.array(
     [

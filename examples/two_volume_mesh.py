@@ -1,6 +1,8 @@
-from vertices_to_h5m import vertices_to_h5m
-import numpy as np
 import os
+
+import numpy as np
+
+from vertices_to_h5m import vertices_to_h5m
 
 # These are the x,y,z coordinates of each vertex.
 # The first 4 are used in the first volume

@@ -1,11 +1,12 @@
-import numpy as np
-from vertices_to_h5m import vertices_to_h5m
 from pathlib import Path
+
 import dagmc_h5m_file_inspector as di
+import numpy as np
 import openmc
 import openmc_data_downloader as odd
 import pytest
 
+from vertices_to_h5m import vertices_to_h5m
 
 """
 Tests that check that:

@@ -1,9 +1,9 @@
 from typing import Iterable, Tuple, Union
 
+import h5py
 import numpy as np
 import trimesh
 from pymoab import core, types
-import h5py
 
 
 def fix_normals(vertices, triangles_in_each_volume):
@@ -201,55 +201,55 @@ def vertices_to_h5m_h5py(
         vertices=vertices_floats, triangles_in_each_volume=triangle_groups
     )
 
-    f = h5py.File(h5m_filename, "w")
+    f = h5py.File(h5m_filename, "w", track_order=True)
+
+    # give each local group a unique tag
+    tag_data = np.concatenate(
+        [np.full(len(group), i) for i, group in enumerate(local_triangle_groups)]
+    )
 
     all_triangles = np.vstack(local_triangle_groups)
 
-    tstt = f.create_group("tstt")
+    tstt = f.create_group("tstt", track_order=True)
+
+    # TODO don't hardcode
+    tstt.attrs.create("max_id", np.uint(12))
 
     elements = tstt.create_group("elements")
 
     global_id = 1  # counts both triangles and coordinates
-    mesh_type = "Tri3"
     mesh_name = 2
 
-    elem_dt = h5py.special_dtype(
-        enum=(
-            "i",
-            {
-                "Edge": 1,
-                "Tri": 2,
-                "Quad": 3,
-                "Polygon": 4,
-                "Tet": 5,
-                "Pyramid": 6,
-                "Prism": 7,
-                "Knife": 8,
-                "Hex": 9,
-                "Polyhedron": 10,
-            },
-        )
-    )
+    elems = {
+        "Edge": 1,
+        "Tri": 2,
+        "Quad": 3,
+        "Polygon": 4,
+        "Tet": 5,
+        "Pyramid": 6,
+        "Prism": 7,
+        "Knife": 8,
+        "Hex": 9,
+        "Polyhedron": 10,
+    }
 
-    elem_group = elements.create_group(mesh_type)
-    elem_group.attrs.create("element_type", mesh_name, dtype=elem_dt)
+    tstt["elemtypes"] = h5py.enum_dtype(elems)
+
+    elem_group = elements.create_group("Tri3")
+
+    elem_group.attrs.create("element_type", elems["Tri"], dtype=tstt["elemtypes"])
 
     conn = elem_group.create_dataset(
         "connectivity",
         data=all_triangles + 1,  # node indices are 1 based in h5m
+        dtype=np.uint64,
     )
 
     conn.attrs.create("start_id", global_id)
     global_id += len(all_triangles)
 
-    key = "materials"
     tags = elem_group.create_group("tags")
-    tags.create_dataset(
-        key,
-        data=[0, 0, 0, 0, 1, 1, 1, 1, 1, 1],  # todo these must be found automatically
-        # compression=compression, commented out to use default here, meshio uses gzip here
-        # compression_opts=compression_opts, commented out to use default here, meshio uses 4 here
-    )
+    tags.create_dataset("GLOBAL_ID", data=tag_data)
 
     nodes = tstt.create_group("nodes")
 
@@ -260,6 +260,36 @@ def vertices_to_h5m_h5py(
     sets = tstt.create_group("sets")
 
     tags = tstt.create_group("tags")
+
+    # cat_group = tags.create_group("CATEGORY")
+    # cat_group.attrs.create("class", 1, dtype=np.int32)
+    # cat_group.create_dataset()
+
+    diri_group = tags.create_group("DIRICHLET_SET")
+    diri_group["type"] = np.dtype("i4")
+    diri_group.attrs.create("class", 1, dtype=np.int32)
+    diri_group.attrs.create("default", -1, dtype=diri_group["type"])
+    diri_group.attrs.create("global", -1, dtype=diri_group["type"])
+
+    geom_group = tags.create_group("GEOM_DIMENSION")
+    geom_group["type"] = np.dtype("i4")
+    geom_group.attrs.create("class", 1, dtype=np.int32)
+    geom_group.attrs.create("default", -1, dtype=geom_group["type"])
+    geom_group.attrs.create("global", -1, dtype=geom_group["type"])
+    geom_group.create_dataset("id_list", data=[9, 10, 11], dtype=np.uint64)
+    geom_group.create_dataset("values", data=[2, 3, 4], dtype=geom_group["type"])
+
+    gid_group = tags.create_group("GLOBAL_ID")
+    gid_group["type"] = np.dtype("i4")
+    gid_group.attrs.create("class", 2, dtype=np.int32)
+    gid_group.attrs.create("default", -1, dtype=gid_group["type"])
+    gid_group.attrs.create("global", -1, dtype=gid_group["type"])
+
+    ms_group = tags.create_group("MATERIAL_SET")
+    ms_group["type"] = np.dtype("i4")
+    ms_group.attrs.create("class", 1, dtype=np.int32)
+    ms_group.attrs.create("default", -1, dtype=ms_group["type"])
+    ms_group.attrs.create("global", -1, dtype=ms_group["type"])
 
 
 def check_vertices(vertices):
@@ -286,7 +316,6 @@ def vertices_to_h5m_pymoab(
     material_tags: Iterable[str],
     h5m_filename="dagmc.h5m",
 ):
-
     if len(material_tags) != len(triangle_groups):
         msg = f"The number of material_tags provided is {len(material_tags)} and the number of sets of triangles is {len(triangle_groups)}. You must provide one material_tag for every triangle set"
         raise ValueError(msg)

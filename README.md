@@ -57,7 +57,7 @@ material tag mat1.
 from vertices_to_h5m import vertices_to_h5m
 import numpy as np
 
-# these are the x,y,z coordinates of each vertex. Entries should be floats 
+# these are the x,y,z coordinates of each vertex. Entries should be floats
 vertices = np.array(
     [
         [0.0, 0.0, 0.0],
@@ -111,7 +111,6 @@ vertices_to_h5m(
     material_tags=["mat1", "mat2"],
     h5m_filename="two_volume_touching_edge.h5m",
 )
-
 ```
 ![two_volumes](images/two_volumes.png)
 
