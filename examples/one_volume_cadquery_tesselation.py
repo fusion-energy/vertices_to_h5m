@@ -1,5 +1,7 @@
-import cadquery as cq
 import os
+
+import cadquery as cq
+
 from vertices_to_h5m import vertices_to_h5m
 
 result = cq.Workplane("front").box(2.0, 2.0, 0.5)
