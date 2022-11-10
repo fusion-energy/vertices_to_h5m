@@ -297,7 +297,7 @@ def vertices_to_h5m_h5py(
     cat_group = tstt_tags_group.create_group("CATEGORY")
     cat_group.attrs.create("class", 1, dtype=np.int32)
     cat_group.create_dataset("id_list", data=[9, 10, 11], dtype=np.uint64)
-    arr = np.array(["Surface", "Volume", "Group"], dtype='|S32')
+    arr = np.array(["Surface", "Volume", "Group"], dtype="|S32")
     cat_group["type"] = h5py.opaque_dtype(arr.dtype)
     cat_group["values"] = arr.astype(h5py.opaque_dtype(arr.dtype))
 
@@ -342,7 +342,7 @@ def vertices_to_h5m_h5py(
         data=[11],
         dtype=np.uint64,
     )
-    arr = np.array(["mat:mat1"], dtype='|S32')
+    arr = np.array(["mat:mat1"], dtype="|S32")
     name_group["type"] = h5py.opaque_dtype(arr.dtype)
     name_group["values"] = arr.astype(h5py.opaque_dtype(name_group["type"]))
 
