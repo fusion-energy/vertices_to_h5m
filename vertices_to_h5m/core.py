@@ -6,7 +6,8 @@ import numpy as np
 import trimesh
 from pymoab import core, types
 
-from ._version import __version__
+# commented out to progress CI , I shall fix the versioning in another PR assigned @shimwell
+# from ._version import __version__
 
 
 def fix_normals(vertices, triangles_in_each_volume):
