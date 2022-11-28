@@ -1,9 +1,11 @@
+from datetime import datetime
 from typing import Iterable, Tuple, Union
 
-import h5py
 import numpy as np
 import trimesh
 from pymoab import core, types
+
+from ._version import __version__
 
 
 def fix_normals(vertices, triangles_in_each_volume):
@@ -194,6 +196,7 @@ def vertices_to_h5m_h5py(
     material_tags: Iterable[str],
     h5m_filename="dagmc.h5m",
 ):
+    import h5py
 
     vertices_floats = check_vertices(vertices)
 
@@ -203,22 +206,24 @@ def vertices_to_h5m_h5py(
 
     f = h5py.File(h5m_filename, "w", track_order=True)
 
-    # give each local group a unique tag
-    tag_data = np.concatenate(
-        [np.full(len(group), i) for i, group in enumerate(local_triangle_groups)]
-    )
-
     all_triangles = np.vstack(local_triangle_groups)
 
     tstt = f.create_group("tstt", track_order=True)
 
-    # TODO don't hardcode
-    tstt.attrs.create("max_id", np.uint(12))
-
-    elements = tstt.create_group("elements")
-
     global_id = 1  # counts both triangles and coordinates
     mesh_name = 2
+
+    nodes_group = tstt.create_group("nodes")
+    coords = nodes_group.create_dataset("coordinates", data=vertices)
+    coords.attrs.create("start_id", global_id)
+    global_id += len(vertices)
+
+    # tag all nodes with -1
+    node_tag_data = np.full(len(vertices), -1)
+    node_tags = nodes_group.create_group("tags")
+    node_tags.create_dataset("GLOBAL_ID", data=node_tag_data)
+
+    elements = tstt.create_group("elements")
 
     elems = {
         "Edge": 1,
@@ -235,6 +240,17 @@ def vertices_to_h5m_h5py(
 
     tstt["elemtypes"] = h5py.enum_dtype(elems)
 
+    now = datetime.now()
+    tstt.create_dataset(
+        "history",
+        data=[
+            "vertices_to_h5m",
+            __version__,
+            now.strftime("%m/%d/%y"),
+            now.strftime("%H:%M:%S"),
+        ],
+    )
+
     tri3_group = elements.create_group("Tri3")
 
     tri3_group.attrs.create("element_type", elems["Tri"], dtype=tstt["elemtypes"])
@@ -248,22 +264,31 @@ def vertices_to_h5m_h5py(
     connectivity_group.attrs.create("start_id", global_id)
     global_id += len(all_triangles)
 
+    # give each local group a unique tag
+    tag_data = np.concatenate(
+        [np.full(len(group), i) for i, group in enumerate(local_triangle_groups)]
+    )
     tags_tri3_group = tri3_group.create_group("tags")
     tags_tri3_group.create_dataset("GLOBAL_ID", data=tag_data)
 
-    nodes = tstt.create_group("nodes")
-
-    coords = nodes.create_dataset("coordinates", data=vertices)
-    coords.attrs.create("start_id", global_id)
-    global_id += len(vertices)
-
-    sets_group = tstt.create_group("sets")
-
     tags_tstt_group = tstt.create_group("tags")
 
-    # cat_group = tags_tstt_group.create_group("CATEGORY")
-    # cat_group.attrs.create("class", 1, dtype=np.int32)
-    # cat_group.create_dataset()
+    cat_group = tags_tstt_group.create_group("CATEGORY")
+    cat_group.attrs.create("class", 1, dtype=np.int32)
+    id_list = [7, 8, 9]
+    cat_group.create_dataset(
+        "id_list",
+        data=id_list,
+        dtype=np.uint,
+    )
+    dt = h5py.opaque_dtype(np.dtype("S32"))
+    # dt.set_tag(b"")
+    cat_group["type"] = dt
+    cat_group.create_dataset(
+        "values",
+        data=["Surface", "Volume", "Group"],
+        dtype=cat_group["type"],
+    )
 
     diri_group = tags_tstt_group.create_group("DIRICHLET_SET")
     diri_group["type"] = np.dtype("i4")
@@ -276,8 +301,22 @@ def vertices_to_h5m_h5py(
     geom_group.attrs.create("class", 1, dtype=np.int32)
     geom_group.attrs.create("default", -1, dtype=geom_group["type"])
     geom_group.attrs.create("global", -1, dtype=geom_group["type"])
-    geom_group.create_dataset("id_list", data=[9, 10, 11], dtype=np.uint64)
+    geom_group.create_dataset("id_list", data=id_list, dtype=np.uint64)
     geom_group.create_dataset("values", data=[2, 3, 4], dtype=geom_group["type"])
+
+    gs2_group = tags_tstt_group.create_group("GEOM_SENSE_2")
+    # TODO pymoab's data type is
+    # ```
+    # DATATYPE "type" H5T_ARRAY { [2] H5T_STD_U64LE };
+    # ```
+    # Not sure yet how to emulate it with h5py.
+    #
+    # gs2_group["type"] = np.dtype("u4,u4")
+    gs2_group["type"] = np.dtype("u4")
+    gs2_group.attrs.create("class", 1, dtype=np.int32)
+    gs2_group.attrs.create("is_handle", 1, dtype=np.int32)
+    gs2_group.create_dataset("id_list", data=[7], dtype=np.uint64)
+    gs2_group.create_dataset("values", data=[8, 0], dtype=gs2_group["type"])
 
     gid_group = tags_tstt_group.create_group("GLOBAL_ID")
     gid_group["type"] = np.dtype("i4")
@@ -290,6 +329,45 @@ def vertices_to_h5m_h5py(
     ms_group.attrs.create("class", 1, dtype=np.int32)
     ms_group.attrs.create("default", -1, dtype=ms_group["type"])
     ms_group.attrs.create("global", -1, dtype=ms_group["type"])
+
+    name_group = tags_tstt_group.create_group("NAME")
+    name_group.attrs.create("class", 1, dtype=np.int32)
+    name_group.create_dataset("id_list", data=[9], dtype=np.uint64)
+    name_group["type"] = h5py.opaque_dtype(np.dtype("S32"))
+    name_group.create_dataset(
+        "values",
+        data=["mat:mat1"],
+        dtype=name_group["type"],
+    )
+
+    neumann_group = tags_tstt_group.create_group("NEUMANN_SET")
+    neumann_group.attrs.create("class", 1, dtype=np.int32)
+    neumann_group["type"] = np.dtype("i4")
+    neumann_group.attrs.create("default", -1, dtype=neumann_group["type"])
+    neumann_group.attrs.create("global", -1, dtype=neumann_group["type"])
+
+    sets_group = tstt.create_group("sets")
+    # TODO don't hardcode
+    sets_group.create_dataset("children", data=np.array([7], dtype=np.uint))
+    sets_group.create_dataset("contents", data=np.array([1, 6, 8, 1, 9], dtype=np.uint))
+    lst = sets_group.create_dataset(
+        "list",
+        data=[
+            [1, -1, 0, 10],
+            [1, 0, 0, 2],
+            [2, 0, 0, 2],
+            [4, 0, 0, 10],
+        ],
+        dtype=np.int,
+    )
+    lst.attrs.create("start_id", global_id)
+    global_id += 4
+    sets_group.create_dataset("parents", data=np.array([8], dtype=np.uint))
+    sets_group.create_dataset(
+        "tags", data=np.array([1, 1, -1, -1]), dtype=gid_group["type"]
+    )
+
+    tstt.attrs.create("max_id", np.uint(global_id - 1))
 
 
 def check_vertices(vertices):
