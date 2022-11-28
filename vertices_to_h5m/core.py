@@ -5,7 +5,9 @@ import numpy as np
 import trimesh
 from pymoab import core, types
 
-from ._version import __version__
+# commented out to progress CI , I shall fix the versioning in another PR assigned @shimwell
+# from ._version import __version__
+__version__ = "0.1.7"  # temp fix
 
 
 def fix_normals(vertices, triangles_in_each_volume):
@@ -204,11 +206,18 @@ def vertices_to_h5m_h5py(
         vertices=vertices_floats, triangles_in_each_volume=triangle_groups
     )
 
-    f = h5py.File(h5m_filename, "w", track_order=True)
+    f = h5py.File(h5m_filename, "w")
 
     all_triangles = np.vstack(local_triangle_groups)
 
-    tstt = f.create_group("tstt", track_order=True)
+    # give each local group a unique tag
+    # tag_data = np.concatenate(
+    #     [np.full(len(group), i) for i, group in enumerate(local_triangle_groups)]
+    # )
+    # Alternative: Set all tags to -1
+    tag_data = np.full(len(all_triangles), -1)
+
+    tstt = f.create_group("tstt")
 
     global_id = 1  # counts both triangles and coordinates
     mesh_name = 2
@@ -237,7 +246,6 @@ def vertices_to_h5m_h5py(
         "Hex": 9,
         "Polyhedron": 10,
     }
-
     tstt["elemtypes"] = h5py.enum_dtype(elems)
 
     now = datetime.now()
@@ -252,7 +260,6 @@ def vertices_to_h5m_h5py(
     )
 
     tri3_group = elements.create_group("Tri3")
-
     tri3_group.attrs.create("element_type", elems["Tri"], dtype=tstt["elemtypes"])
 
     connectivity_group = tri3_group.create_dataset(
@@ -270,7 +277,7 @@ def vertices_to_h5m_h5py(
     )
     tags_tri3_group = tri3_group.create_group("tags")
     tags_tri3_group.create_dataset("GLOBAL_ID", data=tag_data)
-
+    
     tags_tstt_group = tstt.create_group("tags")
 
     cat_group = tags_tstt_group.create_group("CATEGORY")
@@ -290,13 +297,13 @@ def vertices_to_h5m_h5py(
         dtype=cat_group["type"],
     )
 
-    diri_group = tags_tstt_group.create_group("DIRICHLET_SET")
+    diri_group = tstt_tags_group.create_group("DIRICHLET_SET")
     diri_group["type"] = np.dtype("i4")
     diri_group.attrs.create("class", 1, dtype=np.int32)
     diri_group.attrs.create("default", -1, dtype=diri_group["type"])
     diri_group.attrs.create("global", -1, dtype=diri_group["type"])
 
-    geom_group = tags_tstt_group.create_group("GEOM_DIMENSION")
+    geom_group = tstt_tags_group.create_group("GEOM_DIMENSION")
     geom_group["type"] = np.dtype("i4")
     geom_group.attrs.create("class", 1, dtype=np.int32)
     geom_group.attrs.create("default", -1, dtype=geom_group["type"])
@@ -324,7 +331,7 @@ def vertices_to_h5m_h5py(
     gid_group.attrs.create("default", -1, dtype=gid_group["type"])
     gid_group.attrs.create("global", -1, dtype=gid_group["type"])
 
-    ms_group = tags_tstt_group.create_group("MATERIAL_SET")
+    ms_group = tstt_tags_group.create_group("MATERIAL_SET")
     ms_group["type"] = np.dtype("i4")
     ms_group.attrs.create("class", 1, dtype=np.int32)
     ms_group.attrs.create("default", -1, dtype=ms_group["type"])
@@ -368,7 +375,6 @@ def vertices_to_h5m_h5py(
     )
 
     tstt.attrs.create("max_id", np.uint(global_id - 1))
-
 
 def check_vertices(vertices):
     # limited attribute checking to see if user passed in a list of CadQuery vectors
