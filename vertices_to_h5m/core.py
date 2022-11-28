@@ -277,7 +277,7 @@ def vertices_to_h5m_h5py(
     )
     tags_tri3_group = tri3_group.create_group("tags")
     tags_tri3_group.create_dataset("GLOBAL_ID", data=tag_data)
-    
+
     tags_tstt_group = tstt.create_group("tags")
 
     cat_group = tags_tstt_group.create_group("CATEGORY")
@@ -375,6 +375,7 @@ def vertices_to_h5m_h5py(
     )
 
     tstt.attrs.create("max_id", np.uint(global_id - 1))
+
 
 def check_vertices(vertices):
     # limited attribute checking to see if user passed in a list of CadQuery vectors
