@@ -1,9 +1,9 @@
 
 [![N|Python](https://www.python.org/static/community_logos/python-powered-w-100x40.png)](https://www.python.org)
 
-[![CI with install](https://github.com/fusion-energy/vertices_to_h5m/actions/workflows/ci_with_install.yml/badge.svg)](https://github.com/fusion-energy/vertices_to_h5m/actions/workflows/ci_with_install.yml)
+[![CI with install](https://github.com/fusion-energy/vertices_to_h5m/actions/workflows/ci_with_install.yml/badge.svg?branch=main&event=push)](https://github.com/fusion-energy/vertices_to_h5m/actions/workflows/ci_with_install.yml)
 
-[![CI with examples](https://github.com/fusion-energy/vertices_to_h5m/actions/workflows/ci_with_examples.yml/badge.svg)](https://github.com/fusion-energy/vertices_to_h5m/actions/workflows/ci_with_examples.yml)
+[![CI with examples](https://github.com/fusion-energy/vertices_to_h5m/actions/workflows/ci_with_examples.yml/badge.svg?branch=main&event=push)](https://github.com/fusion-energy/vertices_to_h5m/actions/workflows/ci_with_examples.yml)
 
 [![Upload Python Package](https://github.com/fusion-energy/vertices_to_h5m/actions/workflows/python-publish.yml/badge.svg)](https://github.com/fusion-energy/vertices_to_h5m/actions/workflows/python-publish.yml)
 [![anaconda-publish](https://github.com/fusion-energy/vertices_to_h5m/actions/workflows/anaconda-publish.yml/badge.svg)](https://github.com/fusion-energy/vertices_to_h5m/actions/workflows/anaconda-publish.yml)
