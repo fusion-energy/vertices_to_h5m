@@ -6,10 +6,13 @@
 name: CI with examples
 
 on:
+  push:
+    branches:
+    - main
   pull_request:    
     branches:
-    - develop
     - main
+    - develop
  
 jobs:
   testing:

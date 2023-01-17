@@ -6,10 +6,13 @@
 name: CI with install
 
 on:
+  push:
+    branches:
+    - main
   pull_request:    
     branches:
-    - develop
     - main
+    - develop
  
 jobs:
   testing:
