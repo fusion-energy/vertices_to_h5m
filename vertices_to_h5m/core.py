@@ -326,18 +326,21 @@ def vertices_to_h5m_h5py(
     geom_group.create_dataset("values", data=[2, 3, 4], dtype=geom_group["type"])
 
     gs2_group = tstt_tags_group.create_group("GEOM_SENSE_2")
-    # TODO pymoab's data type is
-    # ```
-    # DATATYPE "type" H5T_ARRAY { [2] H5T_STD_U64LE };
-    # ```
-    # Not sure yet how to emulate it with h5py.
     #
-    # gs2_group["type"] = np.dtype("u4,u4")
-    gs2_group["type"] = np.dtype("u4")
+    # TODO The dtype pymoab uses her is
+    # ```
+    # gs2_group["type"] = np.dtype("(2,)u8")
+    # ```
+    # It's unclear though how to create an actual data
+    # array with that dtype now. See
+    # <https://stackoverflow.com/q/75940472/353337>.
+    # For now, fall back to a regular old u8 array of shape (n, 2).
+    #
+    gs2_group["type"] = np.dtype("u8")
     gs2_group.attrs.create("class", 1, dtype=np.int32)
     gs2_group.attrs.create("is_handle", 1, dtype=np.int32)
     gs2_group.create_dataset("id_list", data=[7], dtype=np.uint64)
-    gs2_group.create_dataset("values", data=[8, 0], dtype=gs2_group["type"])
+    gs2_group.create_dataset("values", data=[[8, 0]], dtype=gs2_group["type"])
 
     gid_group = tstt_tags_group.create_group("GLOBAL_ID")
     gid_group["type"] = np.dtype("i4")
