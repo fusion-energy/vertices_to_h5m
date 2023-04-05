@@ -22,7 +22,6 @@ def transport_particles_on_h5m_geometry(
 
     materials = openmc.Materials()
     for material_tag in material_tags:
-
         # simplified material definitions have been used to keen this example minimal
         mat_dag_material_tag = openmc.Material(name=material_tag)
         mat_dag_material_tag.add_element("H", 1, "ao")
@@ -111,7 +110,6 @@ def transport_particles_on_h5m_geometry(
 
 @pytest.mark.parametrize("filename", ["h5py_two_volumes.h5m", "pymoab_two_volumes.h5m"])
 def test_h5m_files_produced_contain_exspected_tags(filename):
-
     assert Path(filename).is_file()
     assert di.get_volumes_from_h5m(filename) == [1, 2]
     assert di.get_materials_from_h5m(filename) == ["mat1", "mat2"]
@@ -123,7 +121,6 @@ def test_h5m_files_produced_contain_exspected_tags(filename):
 
 @pytest.mark.parametrize("filename", ["h5py_two_volumes.h5m", "pymoab_two_volumes.h5m"])
 def test_h5m_files_produced_work_in_transport(filename):
-
     flux_value = transport_particles_on_h5m_geometry(
         h5m_filename=filename,
         material_tags=["mat1", "mat2"],
