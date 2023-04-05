@@ -3,6 +3,7 @@ from typing import Iterable, Tuple, Union
 
 import numpy as np
 import trimesh
+
 # from pymoab import core, types
 
 # commented out to progress CI , I shall fix the versioning in another PR assigned @shimwell
@@ -11,7 +12,6 @@ __version__ = "0.1.7"  # temp fix
 
 
 def fix_normals(vertices, triangles_in_each_volume):
-
     fixed_triangles = []
     for triangles in triangles_in_each_volume:
         fixed_triangles.append(fix_normal(vertices, triangles))
@@ -19,7 +19,6 @@ def fix_normals(vertices, triangles_in_each_volume):
 
 
 def fix_normal(vertices, triangles):
-
     # for triangles in triangles_in_each_volume:
     mesh = trimesh.Trimesh(vertices=vertices, faces=triangles, process=False)
 
@@ -88,7 +87,6 @@ def prepare_moab_core(
     volume_id,
     tags,
 ):
-
     surface_set = moab_core.create_meshset()
     volume_set = moab_core.create_meshset()
 
@@ -117,7 +115,6 @@ def prepare_moab_core(
 
 
 def add_vertices_to_moab_core(moab_core, vertices, surface_set):
-
     moab_verts = moab_core.create_vertices(vertices)
 
     moab_core.add_entity(surface_set, moab_verts)
@@ -127,9 +124,7 @@ def add_vertices_to_moab_core(moab_core, vertices, surface_set):
 def add_triangles_to_moab_core(
     material_tag, surface_set, moab_core, tags, triangle_groups, moab_verts, volume_set
 ):
-
     for triangle in triangle_groups:
-
         tri = (
             moab_verts[int(triangle[0])],
             moab_verts[int(triangle[1])],
@@ -264,7 +259,7 @@ def vertices_to_h5m_h5py(
 
     connectivity_group = tri3_group.create_dataset(
         "connectivity",
-        data=all_triangles + 1,  # node indices are 1 based in h5m
+        data=all_triangles + 1,  # node indices are 1-based in h5m
         dtype=np.uint64,
     )
 
@@ -280,15 +275,14 @@ def vertices_to_h5m_h5py(
 
     tstt_tags_group = tstt.create_group("tags")
 
+    # IDs 7, 8, 9 are used further below in group/set/tag specification
+    id_list = [7, 8, 9]
+    names = ["Surface", "Volume", "Group"]
+    geom_dimensions = [2, 3, 4]
+
     cat_group = tstt_tags_group.create_group("CATEGORY")
     cat_group.attrs.create("class", 1, dtype=np.int32)
-    id_list = [7, 8, 9]
-    cat_group.create_dataset(
-        "id_list",
-        data=id_list,
-        dtype=np.uint,
-    )
-
+    cat_group.create_dataset("id_list", data=id_list, dtype=np.uint)
     # The old pymoab version gives
     #
     # DATATYPE "type" H5T_OPAQUE {
@@ -305,9 +299,10 @@ def vertices_to_h5m_h5py(
     # difference.
     dt = h5py.opaque_dtype(np.dtype("S32"))
     cat_group["type"] = dt
+    assert all(len(name) <= 32 for name in names)
     cat_group.create_dataset(
         "values",
-        data=["Surface", "Volume", "Group"],
+        data=names,
         dtype=cat_group["type"],
     )
 
@@ -323,7 +318,7 @@ def vertices_to_h5m_h5py(
     geom_group.attrs.create("default", -1, dtype=geom_group["type"])
     geom_group.attrs.create("global", -1, dtype=geom_group["type"])
     geom_group.create_dataset("id_list", data=id_list, dtype=np.uint64)
-    geom_group.create_dataset("values", data=[2, 3, 4], dtype=geom_group["type"])
+    geom_group.create_dataset("values", data=geom_dimensions, dtype=geom_group["type"])
 
     gs2_group = tstt_tags_group.create_group("GEOM_SENSE_2")
     #
@@ -340,6 +335,7 @@ def vertices_to_h5m_h5py(
     gs2_group.attrs.create("class", 1, dtype=np.int32)
     gs2_group.attrs.create("is_handle", 1, dtype=np.int32)
     gs2_group.create_dataset("id_list", data=[7], dtype=np.uint64)
+    # No idea what's stored here. The 7 perhaps refers to the "surface" IDs, see above.
     gs2_group.create_dataset("values", data=[[8, 0]], dtype=gs2_group["type"])
 
     gid_group = tstt_tags_group.create_group("GLOBAL_ID")
@@ -356,11 +352,12 @@ def vertices_to_h5m_h5py(
 
     name_group = tstt_tags_group.create_group("NAME")
     name_group.attrs.create("class", 1, dtype=np.int32)
+    # 9 = groups
     name_group.create_dataset("id_list", data=[9], dtype=np.uint64)
     name_group["type"] = h5py.opaque_dtype(np.dtype("S32"))
     name_group.create_dataset(
         "values",
-        data=["mat:mat1"],
+        data=[f"mat:{mat}" for mat in material_tags],
         dtype=name_group["type"],
     )
 
@@ -371,7 +368,7 @@ def vertices_to_h5m_h5py(
     neumann_group.attrs.create("global", -1, dtype=neumann_group["type"])
 
     sets_group = tstt.create_group("sets")
-    # TODO don't hardcode
+    # TODO no idea what's stored here
     sets_group.create_dataset("children", data=np.array([7], dtype=np.uint))
     sets_group.create_dataset("contents", data=np.array([1, 6, 8, 1, 9], dtype=np.uint))
     lst = sets_group.create_dataset(
