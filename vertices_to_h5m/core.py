@@ -3,8 +3,7 @@ from typing import Iterable, Tuple, Union
 
 import numpy as np
 import trimesh
-
-# from pymoab import core, types
+from pymoab import core, types
 
 # commented out to progress CI , I shall fix the versioning in another PR assigned @shimwell
 # from ._version import __version__
