@@ -32,7 +32,7 @@ jobs:
         run: |
           sudo apt-get update -y
           sudo apt-get upgrade -y
-          sudo apt-get install -y libgl1-mesa-glx libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev libosmesa6 libosmesa6-dev libgles2-mesa-dev
+          sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev libosmesa6 libosmesa6-dev libgles2-mesa-dev
           python -m pip install cadquery
 
       - name: Run examples
