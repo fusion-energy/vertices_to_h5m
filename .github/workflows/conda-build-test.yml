@@ -18,7 +18,6 @@ jobs:
       - name: Set up conda
         run: |
             apt-get --allow-releaseinfo-change update
-            apt install -y libgl1-mesa-glx
             conda install -y anaconda-client conda-build
             conda config --set anaconda_upload no
             conda install boa -c conda-forge
