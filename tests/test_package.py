@@ -59,9 +59,7 @@ def _h5py_read_volumes_and_materials(filename):
         cat = tstt["tags"]["CATEGORY"]
         cat_handles = [int(x) for x in cat["id_list"][:]]
         cat_values = [_decode_opaque(v) for v in cat["values"][:]]
-        volume_handles = [
-            h for h, v in zip(cat_handles, cat_values) if v == "Volume"
-        ]
+        volume_handles = [h for h, v in zip(cat_handles, cat_values) if v == "Volume"]
 
         name = tstt["tags"]["NAME"]
         group_pairs = sorted(
@@ -125,7 +123,9 @@ def transport_particles_on_h5m_geometry(
 
     # Download nuclear data and set OPENMC_CROSS_SECTIONS (API differs across versions)
     if hasattr(odd, "just_in_time_library_generator"):
-        odd.just_in_time_library_generator(libraries="ENDFB-7.1-NNDC", materials=materials)
+        odd.just_in_time_library_generator(
+            libraries="ENDFB-7.1-NNDC", materials=materials
+        )
     elif hasattr(odd, "download_cross_section_data"):
         odd.download_cross_section_data(
             materials=materials,

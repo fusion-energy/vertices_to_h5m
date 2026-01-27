@@ -119,9 +119,7 @@ def _h5py_read_volumes_and_materials(filename):
         cat = tstt["tags"]["CATEGORY"]
         cat_handles = [int(x) for x in cat["id_list"][:]]
         cat_values = [_decode_opaque(v) for v in cat["values"][:]]
-        volume_handles = [
-            h for h, v in zip(cat_handles, cat_values) if v == "Volume"
-        ]
+        volume_handles = [h for h, v in zip(cat_handles, cat_values) if v == "Volume"]
 
         name = tstt["tags"]["NAME"]
         group_pairs = sorted(
