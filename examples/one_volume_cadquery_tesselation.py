@@ -13,7 +13,7 @@ vertices, triangles = result.val().tessellate(tolerance=0.1)
 
 vertices_to_h5m(
     vertices=vertices,
-    triangles=[triangles],
+    triangle_groups=[triangles],
     material_tags=["mat1"],
     h5m_filename="one_cadquery_volume.h5m",
 )

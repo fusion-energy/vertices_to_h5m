@@ -33,4 +33,4 @@ vertices_to_h5m(
 
 import os
 
-os.system("mbconvert one_volume.h5m one_volume.vtk")
+os.system("mbconvert one_volume_h5py.h5m one_volume_h5py.vtk")
