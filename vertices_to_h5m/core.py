@@ -360,7 +360,9 @@ def vertices_to_h5m_h5py(
         "id_list", data=np.array(set_ids_in_order, dtype=np.uint64)
     )
     geom_group.create_dataset(
-        "values", data=np.array(geom_dimensions, dtype=np.int32), dtype=geom_group["type"]
+        "values",
+        data=np.array(geom_dimensions, dtype=np.int32),
+        dtype=geom_group["type"],
     )
 
     gs2_group = tstt_tags_group.create_group("GEOM_SENSE_2")
@@ -368,9 +370,7 @@ def vertices_to_h5m_h5py(
     gs2_group["type"] = gs2_dtype
     gs2_group.attrs.create("class", 1, dtype=np.int32)
     gs2_group.attrs.create("is_handle", 1, dtype=np.int32)
-    gs2_group.create_dataset(
-        "id_list", data=np.array(surface_ids, dtype=np.uint64)
-    )
+    gs2_group.create_dataset("id_list", data=np.array(surface_ids, dtype=np.uint64))
     if num_volumes > 0:
         gs2_values = np.zeros((num_volumes,), dtype=[("f0", "<u8", (2,))])
         gs2_values["f0"] = np.array(
@@ -475,9 +475,7 @@ def vertices_to_h5m_h5py(
     for idx in range(num_volumes):
         set_global_ids.extend([idx + 1, idx + 1, -1])
     set_global_ids.append(-1)
-    sets_tags.create_dataset(
-        "GLOBAL_ID", data=np.array(set_global_ids, dtype=np.int32)
-    )
+    sets_tags.create_dataset("GLOBAL_ID", data=np.array(set_global_ids, dtype=np.int32))
 
     tstt.attrs.create("max_id", np.uint64(file_id))
 
