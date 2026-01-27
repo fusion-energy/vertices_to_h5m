@@ -1,5 +1,6 @@
-from vertices_to_h5m import vertices_to_h5m
 import numpy as np
+
+from vertices_to_h5m import vertices_to_h5m
 
 vertices = np.array(
     [
@@ -17,9 +18,10 @@ triangles = [
 
 vertices_to_h5m(
     vertices=vertices,
-    triangles=triangles,
+    triangle_groups=triangles,
     material_tags=["mat1"],
     h5m_filename="one_volume.h5m",
+    method="h5py",
 )
 
 import os

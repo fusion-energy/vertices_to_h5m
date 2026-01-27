@@ -1,12 +1,21 @@
+from datetime import datetime
 from typing import Iterable, Tuple, Union
 
 import numpy as np
 import trimesh
-from pymoab import core, types
+
+try:
+    from pymoab import core, types
+except Exception:  # pragma: no cover - optional dependency
+    core = None
+    types = None
+
+# commented out to progress CI , I shall fix the versioning in another PR assigned @shimwell
+# from ._version import __version__
+__version__ = "0.1.7"  # temp fix
 
 
 def fix_normals(vertices, triangles_in_each_volume):
-
     fixed_triangles = []
     for triangles in triangles_in_each_volume:
         fixed_triangles.append(fix_normal(vertices, triangles))
@@ -14,7 +23,6 @@ def fix_normals(vertices, triangles_in_each_volume):
 
 
 def fix_normal(vertices, triangles):
-
     # for triangles in triangles_in_each_volume:
     mesh = trimesh.Trimesh(vertices=vertices, faces=triangles, process=False)
 
@@ -23,7 +31,7 @@ def fix_normal(vertices, triangles):
     return mesh.faces
 
 
-def _define_moab_core_and_tags() -> Tuple[core.Core, dict]:
+def _define_moab_core_and_tags():
     """Creates a MOAB Core instance which can be built up by adding sets of
     triangles to the instance
 
@@ -31,6 +39,10 @@ def _define_moab_core_and_tags() -> Tuple[core.Core, dict]:
         (pymoab Core): A pymoab.core.Core() instance
         (pymoab tag_handle): A pymoab.core.tag_get_handle() instance
     """
+    if core is None or types is None:
+        raise ImportError(
+            "pymoab is required for method='pymoab'. Install moab/pymoab to use this path."
+        )
 
     # create pymoab instance
     moab_core = core.Core()
@@ -83,7 +95,6 @@ def prepare_moab_core(
     volume_id,
     tags,
 ):
-
     surface_set = moab_core.create_meshset()
     volume_set = moab_core.create_meshset()
 
@@ -112,7 +123,6 @@ def prepare_moab_core(
 
 
 def add_vertices_to_moab_core(moab_core, vertices, surface_set):
-
     moab_verts = moab_core.create_vertices(vertices)
 
     moab_core.add_entity(surface_set, moab_verts)
@@ -120,11 +130,9 @@ def add_vertices_to_moab_core(moab_core, vertices, surface_set):
 
 
 def add_triangles_to_moab_core(
-    material_tag, surface_set, moab_core, tags, triangles, moab_verts, volume_set
+    material_tag, surface_set, moab_core, tags, triangle_groups, moab_verts, volume_set
 ):
-
-    for triangle in triangles:
-
+    for triangle in triangle_groups:
         tri = (
             moab_verts[int(triangle[0])],
             moab_verts[int(triangle[1])],
@@ -151,24 +159,328 @@ def vertices_to_h5m(
     vertices: Union[
         Iterable[Tuple[float, float, float]], Iterable["cadquery.occ_impl.geom.Vector"]
     ],
-    triangles: Iterable[Tuple[int, int, int]],
+    triangle_groups: Iterable[Tuple[int, int, int]],
     material_tags: Iterable[str],
     h5m_filename="dagmc.h5m",
+    method="pymoab",
 ):
     """Converts vertices and triangle sets into a tagged h5m file compatible
     with DAGMC enabled neutronics simulations
 
     Args:
-        vertices:
-        triangles:
-        material_tags:
-        h5m_filename:
+        vertices: an iterable of x,y,z coordinates
+        triangle_groups: an iterable of triangle sets
+        material_tags: the material names to tag the triangle sets with
+        h5m_filename: the output h5m filename
+        method: the method of creating the h5m file, either 'pymoab' or 'h5py'
     """
 
-    if len(material_tags) != len(triangles):
-        msg = f"The number of material_tags provided is {len(material_tags)} and the number of sets of triangles is {len(triangles)}. You must provide one material_tag for every triangle set"
+    if method == "h5py":
+        vertices_to_h5m_h5py(
+            vertices=vertices,
+            triangle_groups=triangle_groups,
+            material_tags=material_tags,
+            h5m_filename=h5m_filename,
+        )
+    elif method == "pymoab":
+        vertices_to_h5m_pymoab(
+            vertices=vertices,
+            triangle_groups=triangle_groups,
+            material_tags=material_tags,
+            h5m_filename=h5m_filename,
+        )
+    else:
+        raise ValueError(f"method must be either pymoab or h5py, not {method}")
+
+
+def vertices_to_h5m_h5py(
+    vertices: Union[
+        Iterable[Tuple[float, float, float]], Iterable["cadquery.occ_impl.geom.Vector"]
+    ],
+    triangle_groups: Iterable[Tuple[int, int, int]],
+    material_tags: Iterable[str],
+    h5m_filename="dagmc.h5m",
+):
+    import h5py
+
+    if len(material_tags) != len(triangle_groups):
+        msg = (
+            f"The number of material_tags provided is {len(material_tags)} and the number of "
+            f"sets of triangles is {len(triangle_groups)}. You must provide one material_tag "
+            "for every triangle set"
+        )
         raise ValueError(msg)
 
+    vertices_floats = check_vertices(vertices)
+
+    local_triangle_groups = fix_normals(
+        vertices=vertices_floats, triangles_in_each_volume=triangle_groups
+    )
+
+    num_volumes = len(local_triangle_groups)
+    vertices_arr = np.asarray(vertices_floats, dtype=float)
+    num_vertices = len(vertices_arr)
+
+    # Duplicate vertices per volume to mirror the pymoab output
+    if num_volumes > 1:
+        all_vertices = np.vstack([vertices_arr] * num_volumes)
+    else:
+        all_vertices = vertices_arr
+
+    all_triangles = []
+    tri_counts = []
+    for vol_idx, tris in enumerate(local_triangle_groups):
+        tris_arr = np.asarray(tris, dtype=np.int64)
+        tri_counts.append(len(tris_arr))
+        offset = vol_idx * num_vertices
+        if len(tris_arr) > 0:
+            all_triangles.append(tris_arr + offset)
+    if all_triangles:
+        all_triangles = np.vstack(all_triangles)
+    else:
+        all_triangles = np.empty((0, 3), dtype=np.int64)
+
+    f = h5py.File(h5m_filename, "w")
+
+    tstt = f.create_group("tstt")
+
+    global_id = 1  # counts both triangles and coordinates
+
+    nodes_group = tstt.create_group("nodes")
+    coords = nodes_group.create_dataset("coordinates", data=all_vertices)
+    coords.attrs.create("start_id", global_id)
+    global_id += len(all_vertices)
+
+    # tag all nodes with -1
+    node_tag_data = np.full(len(all_vertices), -1, dtype=np.int32)
+    node_tags = nodes_group.create_group("tags")
+    node_tags.create_dataset("GLOBAL_ID", data=node_tag_data)
+
+    elements = tstt.create_group("elements")
+
+    elems = {
+        "Edge": 1,
+        "Tri": 2,
+        "Quad": 3,
+        "Polygon": 4,
+        "Tet": 5,
+        "Pyramid": 6,
+        "Prism": 7,
+        "Knife": 8,
+        "Hex": 9,
+        "Polyhedron": 10,
+    }
+    tstt["elemtypes"] = h5py.enum_dtype(elems)
+
+    now = datetime.now()
+    tstt.create_dataset(
+        "history",
+        data=[
+            "vertices_to_h5m".encode("ascii"),
+            __version__.encode("ascii"),
+            now.strftime("%m/%d/%y").encode("ascii"),
+            now.strftime("%H:%M:%S").encode("ascii"),
+        ],
+    )
+
+    tri3_group = elements.create_group("Tri3")
+    tri3_group.attrs.create("element_type", elems["Tri"], dtype=tstt["elemtypes"])
+
+    connectivity_group = tri3_group.create_dataset(
+        "connectivity",
+        data=all_triangles + 1,  # node indices are 1-based in h5m
+        dtype=np.uint64,
+    )
+
+    connectivity_group.attrs.create("start_id", global_id)
+    global_id += len(all_triangles)
+
+    tags_tri3_group = tri3_group.create_group("tags")
+    tags_tri3_group.create_dataset(
+        "GLOBAL_ID", data=np.full(len(all_triangles), -1, dtype=np.int32)
+    )
+
+    tstt_tags_group = tstt.create_group("tags")
+
+    # set handles per volume
+    sets_start_id = global_id
+    surface_ids = [sets_start_id + 3 * i for i in range(num_volumes)]
+    volume_ids = [sid + 1 for sid in surface_ids]
+    group_ids = [sid + 2 for sid in surface_ids]
+    file_id = sets_start_id + 3 * num_volumes
+
+    set_ids_in_order = []
+    names = []
+    geom_dimensions = []
+    for surface_id, volume_id, group_id in zip(surface_ids, volume_ids, group_ids):
+        set_ids_in_order.extend([surface_id, volume_id, group_id])
+        names.extend(["Surface", "Volume", "Group"])
+        geom_dimensions.extend([2, 3, 4])
+
+    cat_group = tstt_tags_group.create_group("CATEGORY")
+    cat_group.attrs.create("class", 1, dtype=np.int32)
+    cat_group.create_dataset(
+        "id_list", data=np.array(set_ids_in_order, dtype=np.uint64)
+    )
+    # The old pymoab version gives
+    #
+    # DATATYPE "type" H5T_OPAQUE {
+    #    OPAQUE_TAG "";
+    # };
+    #
+    # while this version gives
+    #
+    # DATATYPE "type" H5T_OPAQUE {
+    #    OPAQUE_TAG "NUMPY:|S32";
+    # };
+    #
+    # in the output file. Probably won't make a
+    # difference.
+    dt = h5py.opaque_dtype(np.dtype("S32"))
+    cat_group["type"] = dt
+    assert all(len(name) <= 32 for name in names)
+    cat_group.create_dataset(
+        "values",
+        data=names,
+        dtype=cat_group["type"],
+    )
+
+    diri_group = tstt_tags_group.create_group("DIRICHLET_SET")
+    diri_group["type"] = np.dtype("i4")
+    diri_group.attrs.create("class", 1, dtype=np.int32)
+    diri_group.attrs.create("default", -1, dtype=diri_group["type"])
+    diri_group.attrs.create("global", -1, dtype=diri_group["type"])
+
+    geom_group = tstt_tags_group.create_group("GEOM_DIMENSION")
+    geom_group["type"] = np.dtype("i4")
+    geom_group.attrs.create("class", 1, dtype=np.int32)
+    geom_group.attrs.create("default", -1, dtype=geom_group["type"])
+    geom_group.attrs.create("global", -1, dtype=geom_group["type"])
+    geom_group.create_dataset(
+        "id_list", data=np.array(set_ids_in_order, dtype=np.uint64)
+    )
+    geom_group.create_dataset(
+        "values",
+        data=np.array(geom_dimensions, dtype=np.int32),
+        dtype=geom_group["type"],
+    )
+
+    gs2_group = tstt_tags_group.create_group("GEOM_SENSE_2")
+    gs2_dtype = np.dtype("(2,)u8")
+    gs2_group["type"] = gs2_dtype
+    gs2_group.attrs.create("class", 1, dtype=np.int32)
+    gs2_group.attrs.create("is_handle", 1, dtype=np.int32)
+    gs2_group.create_dataset("id_list", data=np.array(surface_ids, dtype=np.uint64))
+    if num_volumes > 0:
+        gs2_values = np.zeros((num_volumes,), dtype=[("f0", "<u8", (2,))])
+        gs2_values["f0"] = np.array(
+            [[vol_id, 0] for vol_id in volume_ids], dtype=np.uint64
+        )
+        gs2_space = h5py.h5s.create_simple((num_volumes,))
+        gs2_arr_type = h5py.h5t.array_create(h5py.h5t.NATIVE_UINT64, (2,))
+        gs2_dset = h5py.h5d.create(gs2_group.id, b"values", gs2_arr_type, gs2_space)
+        gs2_dset.write(h5py.h5s.ALL, h5py.h5s.ALL, gs2_values, mtype=gs2_arr_type)
+        gs2_dset.close()
+    else:
+        gs2_group.create_dataset("values", shape=(0,), dtype=gs2_dtype)
+
+    gid_group = tstt_tags_group.create_group("GLOBAL_ID")
+    gid_group["type"] = np.dtype("i4")
+    gid_group.attrs.create("class", 2, dtype=np.int32)
+    gid_group.attrs.create("default", -1, dtype=gid_group["type"])
+    gid_group.attrs.create("global", -1, dtype=gid_group["type"])
+
+    ms_group = tstt_tags_group.create_group("MATERIAL_SET")
+    ms_group["type"] = np.dtype("i4")
+    ms_group.attrs.create("class", 1, dtype=np.int32)
+    ms_group.attrs.create("default", -1, dtype=ms_group["type"])
+    ms_group.attrs.create("global", -1, dtype=ms_group["type"])
+
+    name_group = tstt_tags_group.create_group("NAME")
+    name_group.attrs.create("class", 1, dtype=np.int32)
+    name_group.create_dataset("id_list", data=np.array(group_ids, dtype=np.uint64))
+    name_group["type"] = h5py.opaque_dtype(np.dtype("S32"))
+    name_group.create_dataset(
+        "values",
+        data=[f"mat:{mat}" for mat in material_tags],
+        dtype=name_group["type"],
+    )
+
+    neumann_group = tstt_tags_group.create_group("NEUMANN_SET")
+    neumann_group.attrs.create("class", 1, dtype=np.int32)
+    neumann_group["type"] = np.dtype("i4")
+    neumann_group.attrs.create("default", -1, dtype=neumann_group["type"])
+    neumann_group.attrs.create("global", -1, dtype=neumann_group["type"])
+
+    sets_group = tstt.create_group("sets")
+    children = np.array(surface_ids, dtype=np.uint64)
+    parents = np.array(volume_ids, dtype=np.uint64)
+    sets_group.create_dataset("children", data=children)
+    sets_group.create_dataset("parents", data=parents)
+
+    contents = []
+    list_rows = []
+    contents_end = -1
+    relation_end = -1
+
+    elem_start_id = len(all_vertices) + 1
+    tri_offset = 0
+
+    for idx, (surface_id, volume_id, group_id, tri_count) in enumerate(
+        zip(surface_ids, volume_ids, group_ids, tri_counts)
+    ):
+        node_start = idx * num_vertices + 1
+        node_count = num_vertices
+        elem_start = elem_start_id + tri_offset
+        elem_count = tri_count
+        tri_offset += tri_count
+
+        ranges = [(node_start, node_count)]
+        if elem_count > 0:
+            ranges.append((elem_start, elem_count))
+
+        merged = []
+        for start, count in ranges:
+            if merged and merged[-1][0] + merged[-1][1] == start:
+                merged[-1] = (merged[-1][0], merged[-1][1] + count)
+            else:
+                merged.append((start, count))
+
+        for start, count in merged:
+            contents.extend([start, count])
+        contents_end = len(contents) - 1
+        list_rows.append([contents_end, relation_end, idx, 10])
+
+        # volume -> surface relation
+        relation_end = idx
+        list_rows.append([contents_end, relation_end, idx, 2])
+
+        # group contains volume handle
+        contents.append(volume_id)
+        contents_end = len(contents) - 1
+        list_rows.append([contents_end, relation_end, idx, 2])
+
+    # file set contains everything except itself
+    if num_volumes > 0:
+        contents.extend([1, file_id - 1])
+        contents_end = len(contents) - 1
+        list_rows.append([contents_end, relation_end, num_volumes - 1, 10])
+
+    sets_group.create_dataset("contents", data=np.array(contents, dtype=np.uint64))
+    lst = sets_group.create_dataset("list", data=np.array(list_rows, dtype=np.int64))
+    lst.attrs.create("start_id", sets_start_id)
+
+    sets_tags = sets_group.create_group("tags")
+    set_global_ids = []
+    for idx in range(num_volumes):
+        set_global_ids.extend([idx + 1, idx + 1, -1])
+    set_global_ids.append(-1)
+    sets_tags.create_dataset("GLOBAL_ID", data=np.array(set_global_ids, dtype=np.int32))
+
+    tstt.attrs.create("max_id", np.uint64(file_id))
+
+
+def check_vertices(vertices):
     # limited attribute checking to see if user passed in a list of CadQuery vectors
     if (
         hasattr(vertices[0], "x")
@@ -181,8 +493,29 @@ def vertices_to_h5m(
     else:
         vertices_floats = vertices
 
+    return vertices_floats
+
+
+def vertices_to_h5m_pymoab(
+    vertices: Union[
+        Iterable[Tuple[float, float, float]], Iterable["cadquery.occ_impl.geom.Vector"]
+    ],
+    triangle_groups: Iterable[Tuple[int, int, int]],
+    material_tags: Iterable[str],
+    h5m_filename="dagmc.h5m",
+):
+    if core is None or types is None:
+        raise ImportError(
+            "pymoab is required for method='pymoab'. Install moab/pymoab to use this path."
+        )
+    if len(material_tags) != len(triangle_groups):
+        msg = f"The number of material_tags provided is {len(material_tags)} and the number of sets of triangles is {len(triangle_groups)}. You must provide one material_tag for every triangle set"
+        raise ValueError(msg)
+
+    vertices_floats = check_vertices(vertices)
+
     triangles = fix_normals(
-        vertices=vertices_floats, triangles_in_each_volume=triangles
+        vertices=vertices_floats, triangles_in_each_volume=triangle_groups
     )
 
     moab_core, tags = _define_moab_core_and_tags()

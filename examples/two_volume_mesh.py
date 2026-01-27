@@ -1,6 +1,8 @@
-from vertices_to_h5m import vertices_to_h5m
-import numpy as np
 import os
+
+import numpy as np
+
+from vertices_to_h5m import vertices_to_h5m
 
 # These are the x,y,z coordinates of each vertex.
 # The first 4 are used in the first volume
@@ -17,7 +19,7 @@ triangles = [
 # This will produce a h5m file called two_volume_touching_edge.h5m ready for use with DAGMC enabled codes
 vertices_to_h5m(
     vertices=vertices,
-    triangles=triangles,
+    triangle_groups=triangles,
     material_tags=["mat1", "mat2"],
     h5m_filename="two_volume_touching_edge.h5m",
 )

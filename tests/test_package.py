@@ -1,10 +1,30 @@
-import numpy as np
-from vertices_to_h5m import vertices_to_h5m
 from pathlib import Path
-import dagmc_h5m_file_inspector as di
+
+import numpy as np
 import openmc
 import openmc_data_downloader as odd
-import math
+import pytest
+
+try:
+    import dagmc_h5m_file_inspector as di
+except Exception:  # pragma: no cover - optional dependency
+    di = None
+
+try:
+    import pymoab  # noqa: F401
+
+    _HAS_PYMOAB = True
+except Exception:  # pragma: no cover - optional dependency
+    _HAS_PYMOAB = False
+
+try:
+    import h5py  # noqa: F401
+
+    _HAS_H5PY = True
+except Exception:  # pragma: no cover - optional dependency
+    _HAS_H5PY = False
+
+from vertices_to_h5m import vertices_to_h5m
 
 """
 Tests that check that:
@@ -15,6 +35,75 @@ Tests that check that:
 """
 
 
+def _decode_opaque(value):
+    raw = value.tobytes() if hasattr(value, "tobytes") else bytes(value)
+    return raw.split(b"\x00", 1)[0].decode("ascii")
+
+
+def _h5py_read_volumes_and_materials(filename):
+    if not _HAS_H5PY:
+        raise ImportError("h5py is required to read h5m files without pymoab.")
+
+    import h5py
+
+    with h5py.File(filename, "r") as f:
+        tstt = f["tstt"]
+        sets = tstt["sets"]
+
+        start_id = int(sets["list"].attrs["start_id"])
+        global_ids = sets["tags"]["GLOBAL_ID"][:]
+        handle_to_gid = {
+            start_id + i: int(global_ids[i]) for i in range(len(global_ids))
+        }
+
+        cat = tstt["tags"]["CATEGORY"]
+        cat_handles = [int(x) for x in cat["id_list"][:]]
+        cat_values = [_decode_opaque(v) for v in cat["values"][:]]
+        volume_handles = [h for h, v in zip(cat_handles, cat_values) if v == "Volume"]
+
+        name = tstt["tags"]["NAME"]
+        group_pairs = sorted(
+            [
+                (int(h), _decode_opaque(v))
+                for h, v in zip(name["id_list"][:], name["values"][:])
+            ],
+            key=lambda pair: pair[0],
+        )
+        materials = [
+            val.split("mat:", 1)[1] if val.startswith("mat:") else val
+            for _, val in group_pairs
+        ]
+
+        volume_ids = [handle_to_gid[h] for h in sorted(volume_handles)]
+        mapping = {
+            volume_ids[i]: materials[i]
+            for i in range(min(len(volume_ids), len(materials)))
+        }
+
+        return volume_ids, materials, mapping
+
+
+def get_volumes_from_h5m(filename):
+    if di is not None:
+        return di.get_volumes_from_h5m(filename)
+    volumes, _, _ = _h5py_read_volumes_and_materials(filename)
+    return volumes
+
+
+def get_materials_from_h5m(filename):
+    if di is not None:
+        return di.get_materials_from_h5m(filename)
+    _, materials, _ = _h5py_read_volumes_and_materials(filename)
+    return materials
+
+
+def get_volumes_and_materials_from_h5m(filename):
+    if di is not None:
+        return di.get_volumes_and_materials_from_h5m(filename)
+    _, _, mapping = _h5py_read_volumes_and_materials(filename)
+    return mapping
+
+
 def transport_particles_on_h5m_geometry(
     h5m_filename, material_tags, cross_sections_xml=None
 ):
@@ -22,7 +111,6 @@ def transport_particles_on_h5m_geometry(
 
     materials = openmc.Materials()
     for material_tag in material_tags:
-
         # simplified material definitions have been used to keen this example minimal
         mat_dag_material_tag = openmc.Material(name=material_tag)
         mat_dag_material_tag.add_element("H", 1, "ao")
@@ -32,8 +120,27 @@ def transport_particles_on_h5m_geometry(
 
     if cross_sections_xml:
         materials.cross_sections = cross_sections_xml
-    # downloads the nuclear data and sets the openmc_cross_sections environmental variable
-    odd.just_in_time_library_generator(libraries="ENDFB-7.1-NNDC", materials=materials)
+
+    # Download nuclear data and set OPENMC_CROSS_SECTIONS (API differs across versions)
+    if hasattr(odd, "just_in_time_library_generator"):
+        odd.just_in_time_library_generator(
+            libraries="ENDFB-7.1-NNDC", materials=materials
+        )
+    elif hasattr(odd, "download_cross_section_data"):
+        odd.download_cross_section_data(
+            materials=materials,
+            libraries=["ENDFB-7.1-NNDC"],
+            particles=["neutron"],
+            set_OPENMC_CROSS_SECTIONS=True,
+        )
+    elif hasattr(materials, "download_cross_section_data"):
+        materials.download_cross_section_data(
+            libraries=["ENDFB-7.1-NNDC"],
+            set_OPENMC_CROSS_SECTIONS=True,
+            particles=["neutron"],
+        )
+    else:
+        raise RuntimeError("No compatible cross-section downloader found.")
 
     # makes use of the dagmc geometry
     dag_univ = openmc.DAGMCUniverse(h5m_filename)
@@ -67,8 +174,8 @@ def transport_particles_on_h5m_geometry(
     settings.source = my_source
 
     # adds a tally to record the heat deposited in entire geometry
-    cell_tally = openmc.Tally(name="heating")
-    cell_tally.scores = ["heating"]
+    cell_tally = openmc.Tally(name="flux")
+    cell_tally.scores = ["flux"]
 
     # creates a mesh that covers the geometry
     mesh = openmc.RegularMesh()
@@ -80,11 +187,11 @@ def transport_particles_on_h5m_geometry(
     ]  # x,y,z coordinates start at 0 as this is a sector model
     mesh.upper_right = [10, 10, 10]
 
-    # makes a mesh tally using the previously created mesh and records heating on the mesh
-    mesh_tally = openmc.Tally(name="heating_on_mesh")
+    # makes a mesh tally using the previously created mesh and records flux on the mesh
+    mesh_tally = openmc.Tally(name="flux_on_mesh")
     mesh_filter = openmc.MeshFilter(mesh)
     mesh_tally.filters = [mesh_filter]
-    mesh_tally.scores = ["heating"]
+    mesh_tally.scores = ["flux"]
 
     # groups the two tallies
     tallies = openmc.Tallies([cell_tally, mesh_tally])
@@ -95,10 +202,27 @@ def transport_particles_on_h5m_geometry(
     )
 
     # starts the simulation
-    my_model.run()
+    sp_filename = my_model.run()
+
+    sp = openmc.StatePoint(sp_filename)
+
+    # access the tally
+    tally = sp.get_tally(name="flux")
+
+    try:
+        flux_tally_result = float(tally.mean.sum())
+    except Exception:
+        df = tally.get_pandas_dataframe()
+        flux_tally_result = df["mean"].sum()
+
+    return flux_tally_result
 
 
-def test_h5m_production_with_single_volume_list():
+_METHODS = ["pymoab", "h5py"] if _HAS_PYMOAB else ["h5py"]
+
+
+@pytest.mark.parametrize("method", _METHODS)
+def test_h5m_production_with_single_volume_list(method):
     """The simplest geometry, a single 4 sided shape with lists instead of np arrays"""
 
     test_h5m_filename = "single_tet.h5m"
@@ -112,27 +236,30 @@ def test_h5m_production_with_single_volume_list():
     ]
 
     # the index of the coordinate that make up the corner of a tet, normals need fixing
-    triangles = [[[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]]]
+    triangle_groups = [[[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]]]
 
     vertices_to_h5m(
         vertices=vertices,
-        triangles=triangles,
+        triangle_groups=triangle_groups,
         material_tags=["mat1"],
         h5m_filename=test_h5m_filename,
-    )
-
-    transport_particles_on_h5m_geometry(
-        h5m_filename=test_h5m_filename,
-        material_tags=["mat1"],
+        method=method,
     )
 
     assert Path(test_h5m_filename).is_file()
-    assert di.get_volumes_from_h5m(test_h5m_filename) == [1]
-    assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1"]
-    assert di.get_volumes_and_materials_from_h5m(test_h5m_filename) == {1: "mat1"}
+    assert get_materials_from_h5m(test_h5m_filename) == ["mat1"]
+    assert get_volumes_from_h5m(test_h5m_filename) == [1]
+    assert get_volumes_and_materials_from_h5m(test_h5m_filename) == {1: "mat1"}
+
+    flux_value = transport_particles_on_h5m_geometry(
+        h5m_filename=test_h5m_filename,
+        material_tags=["mat1"],
+    )
+    assert flux_value == pytest.approx(9994.523679063743)
 
 
-def test_h5m_production_with_single_volume_numpy():
+@pytest.mark.parametrize("method", _METHODS)
+def test_h5m_production_with_single_volume_numpy(method):
     """The simplest geometry, a single 4 sided shape"""
 
     test_h5m_filename = "single_tet.h5m"
@@ -149,27 +276,30 @@ def test_h5m_production_with_single_volume_numpy():
     )
 
     # the index of the coordinate that make up the corner of a tet, normals need fixing
-    triangles = [np.array([[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]])]
+    triangle_groups = [np.array([[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]])]
 
     vertices_to_h5m(
         vertices=vertices,
-        triangles=triangles,
+        triangle_groups=triangle_groups,
         material_tags=["mat1"],
         h5m_filename=test_h5m_filename,
+        method=method,
     )
-
-    transport_particles_on_h5m_geometry(
-        h5m_filename=test_h5m_filename,
-        material_tags=["mat1"],
-    )
-
     assert Path(test_h5m_filename).is_file()
-    assert di.get_volumes_from_h5m(test_h5m_filename) == [1]
-    assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1"]
-    assert di.get_volumes_and_materials_from_h5m(test_h5m_filename) == {1: "mat1"}
+    assert get_volumes_from_h5m(test_h5m_filename) == [1]
+    assert get_materials_from_h5m(test_h5m_filename) == ["mat1"]
+    assert get_volumes_and_materials_from_h5m(test_h5m_filename) == {1: "mat1"}
+
+    flux_value = transport_particles_on_h5m_geometry(
+        h5m_filename=test_h5m_filename,
+        material_tags=["mat1"],
+    )
+
+    assert flux_value == pytest.approx(9994.523679063743)
 
 
-def test_h5m_production_with_two_touching_edges_numpy():
+@pytest.mark.parametrize("method", _METHODS)
+def test_h5m_production_with_two_touching_edges_numpy(method):
     """Two 4 sided shapes that share and edge"""
 
     test_h5m_filename = "double_tet.h5m"
@@ -188,33 +318,36 @@ def test_h5m_production_with_two_touching_edges_numpy():
     )
 
     # the index of the coordinate that make up the corner of a tet, normals need fixing
-    triangles = [
+    triangle_groups = [
         np.array([[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]]),
         np.array([[4, 5, 1], [4, 5, 2], [4, 1, 2], [5, 1, 2]]),
     ]
 
     vertices_to_h5m(
         vertices=vertices,
-        triangles=triangles,
+        triangle_groups=triangle_groups,
         material_tags=["mat1", "mat2"],
         h5m_filename=test_h5m_filename,
-    )
-
-    transport_particles_on_h5m_geometry(
-        h5m_filename=test_h5m_filename,
-        material_tags=["mat1", "mat2"],
+        method=method,
     )
 
     assert Path(test_h5m_filename).is_file()
-    assert di.get_volumes_from_h5m(test_h5m_filename) == [1, 2]
-    assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
-    assert di.get_volumes_and_materials_from_h5m(test_h5m_filename) == {
+    assert get_volumes_from_h5m(test_h5m_filename) == [1, 2]
+    assert get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
+    assert get_volumes_and_materials_from_h5m(test_h5m_filename) == {
         1: "mat1",
         2: "mat2",
     }
+    flux_value = transport_particles_on_h5m_geometry(
+        h5m_filename=test_h5m_filename,
+        material_tags=["mat1", "mat2"],
+    )
+
+    assert flux_value == pytest.approx(9992.03209797692)
 
 
-def test_h5m_production_with_two_touching_edges_lists():
+@pytest.mark.parametrize("method", _METHODS)
+def test_h5m_production_with_two_touching_edges_lists(method):
     """Two 4 sided shapes that share and edge"""
 
     test_h5m_filename = "double_tet.h5m"
@@ -230,33 +363,36 @@ def test_h5m_production_with_two_touching_edges_lists():
     ]
 
     # the index of the coordinate that make up the corner of a tet, normals need fixing
-    triangles = [
+    triangle_groups = [
         [[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]],
         [[4, 5, 1], [4, 5, 2], [4, 1, 2], [5, 1, 2]],
     ]
 
     vertices_to_h5m(
         vertices=vertices,
-        triangles=triangles,
+        triangle_groups=triangle_groups,
         material_tags=["mat1", "mat2"],
         h5m_filename=test_h5m_filename,
-    )
-
-    transport_particles_on_h5m_geometry(
-        h5m_filename=test_h5m_filename,
-        material_tags=["mat1", "mat2"],
+        method=method,
     )
 
     assert Path(test_h5m_filename).is_file()
-    assert di.get_volumes_from_h5m(test_h5m_filename) == [1, 2]
-    assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
-    assert di.get_volumes_and_materials_from_h5m(test_h5m_filename) == {
+    assert get_volumes_from_h5m(test_h5m_filename) == [1, 2]
+    assert get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
+    assert get_volumes_and_materials_from_h5m(test_h5m_filename) == {
         1: "mat1",
         2: "mat2",
     }
+    flux_value = transport_particles_on_h5m_geometry(
+        h5m_filename=test_h5m_filename,
+        material_tags=["mat1", "mat2"],
+    )
+
+    assert flux_value == pytest.approx(9992.03209797692)
 
 
-def test_h5m_production_with_two_touching_vertex_numpy():
+@pytest.mark.parametrize("method", _METHODS)
+def test_h5m_production_with_two_touching_vertex_numpy(method):
     """Two 4 sided shapes that share an single vertex"""
 
     test_h5m_filename = "touching_vertex_tets.h5m"
@@ -275,33 +411,36 @@ def test_h5m_production_with_two_touching_vertex_numpy():
     )
 
     # the index of the coordinate that make up the corner of a tet, normals need fixing
-    triangles = [
+    triangle_groups = [
         np.array([[0, 4, 5], [6, 4, 5], [0, 5, 6], [0, 4, 6]]),
         np.array([[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]]),
     ]
 
     vertices_to_h5m(
         vertices=vertices,
-        triangles=triangles,
+        triangle_groups=triangle_groups,
         material_tags=["mat1", "mat2"],
         h5m_filename=test_h5m_filename,
-    )
-
-    transport_particles_on_h5m_geometry(
-        h5m_filename=test_h5m_filename,
-        material_tags=["mat1", "mat2"],
+        method=method,
     )
 
     assert Path(test_h5m_filename).is_file()
-    assert di.get_volumes_from_h5m(test_h5m_filename) == [1, 2]
-    assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
-    assert di.get_volumes_and_materials_from_h5m(test_h5m_filename) == {
+    assert get_volumes_from_h5m(test_h5m_filename) == [1, 2]
+    assert get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
+    assert get_volumes_and_materials_from_h5m(test_h5m_filename) == {
         1: "mat1",
         2: "mat2",
     }
+    flux_value = transport_particles_on_h5m_geometry(
+        h5m_filename=test_h5m_filename,
+        material_tags=["mat1", "mat2"],
+    )
+
+    assert flux_value == pytest.approx(9992.93026368412)
 
 
-def test_h5m_production_with_two_touching_vertex_list():
+@pytest.mark.parametrize("method", _METHODS)
+def test_h5m_production_with_two_touching_vertex_list(method):
     """Two 4 sided shapes that share an single vertex"""
 
     test_h5m_filename = "touching_vertex_tets.h5m"
@@ -317,33 +456,36 @@ def test_h5m_production_with_two_touching_vertex_list():
     ]
 
     # the index of the coordinate that make up the corner of a tet, normals need fixing
-    triangles = [
+    triangle_groups = [
         [[0, 4, 5], [6, 4, 5], [0, 5, 6], [0, 4, 6]],
         [[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]],
     ]
 
     vertices_to_h5m(
         vertices=vertices,
-        triangles=triangles,
+        triangle_groups=triangle_groups,
         material_tags=["mat1", "mat2"],
         h5m_filename=test_h5m_filename,
-    )
-
-    transport_particles_on_h5m_geometry(
-        h5m_filename=test_h5m_filename,
-        material_tags=["mat1", "mat2"],
+        method=method,
     )
 
     assert Path(test_h5m_filename).is_file()
-    assert di.get_volumes_from_h5m(test_h5m_filename) == [1, 2]
-    assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
-    assert di.get_volumes_and_materials_from_h5m(test_h5m_filename) == {
+    assert get_volumes_from_h5m(test_h5m_filename) == [1, 2]
+    assert get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
+    assert get_volumes_and_materials_from_h5m(test_h5m_filename) == {
         1: "mat1",
         2: "mat2",
     }
+    flux_value = transport_particles_on_h5m_geometry(
+        h5m_filename=test_h5m_filename,
+        material_tags=["mat1", "mat2"],
+    )
+
+    assert flux_value == pytest.approx(9992.93026368412)
 
 
-def test_h5m_production_with_two_touching_face_numpy():
+@pytest.mark.parametrize("method", _METHODS)
+def test_h5m_production_with_two_touching_face_numpy(method):
     """Two 4 sided shapes that share a face"""
 
     test_h5m_filename = "double_tet_touching_face.h5m"
@@ -357,34 +499,34 @@ def test_h5m_production_with_two_touching_face_numpy():
             [0.0, 0.0, 1.0],
             [1.0, 0.0, 1.0],
             [0.0, 1.0, 1.0],
-            # [1.0, 1.0, 1.0],
-            # [1.0, 1.0, 0.0],
         ],
         dtype="float64",
     )
 
     # the index of the coordinate that make up the corner of a tet, normals need fixing
-    triangles = [
+    triangle_groups = [
         np.array([[0, 1, 2], [3, 1, 2], [0, 2, 3], [0, 1, 3]]),
         np.array([[1, 2, 3], [1, 3, 4], [3, 5, 2], [1, 2, 4], [2, 4, 5], [3, 5, 4]]),
     ]
 
     vertices_to_h5m(
         vertices=vertices,
-        triangles=triangles,
+        triangle_groups=triangle_groups,
         material_tags=["mat1", "mat2"],
         h5m_filename=test_h5m_filename,
+        method=method,
     )
-
-    transport_particles_on_h5m_geometry(
-        h5m_filename=test_h5m_filename,
-        material_tags=["mat1", "mat2"],
-    )
-
     assert Path(test_h5m_filename).is_file()
-    assert di.get_volumes_from_h5m(test_h5m_filename) == [1, 2]
-    assert di.get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
-    assert di.get_volumes_and_materials_from_h5m(test_h5m_filename) == {
+    assert get_volumes_from_h5m(test_h5m_filename) == [1, 2]
+    assert get_materials_from_h5m(test_h5m_filename) == ["mat1", "mat2"]
+    assert get_volumes_and_materials_from_h5m(test_h5m_filename) == {
         1: "mat1",
         2: "mat2",
     }
+
+    flux_value = transport_particles_on_h5m_geometry(
+        h5m_filename=test_h5m_filename,
+        material_tags=["mat1", "mat2"],
+    )
+
+    assert flux_value == pytest.approx(9981.443525722958)
