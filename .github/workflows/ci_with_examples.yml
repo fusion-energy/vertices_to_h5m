@@ -14,25 +14,27 @@ on:
 jobs:
   testing:
     runs-on: ubuntu-latest
-    container:
-      image: continuumio/miniconda3
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
       
       - name: install package
         run: |
-          pip install .
+          python -m pip install --upgrade pip
+          python -m pip install .
       
       - name: install cadquery as needed by the examples
         run: |
-          apt-get --allow-releaseinfo-change update
-          apt-get update -y
-          apt-get upgrade -y
-          apt-get install -y libgl1-mesa-glx libgl1-mesa-dev libglu1-mesa-dev  freeglut3-dev libosmesa6 libosmesa6-dev  libgles2-mesa-dev
-          conda install -c conda-forge mamba
-          mamba install -c conda-forge moab
-          conda install -c cadquery -c conda-forge cadquery=master
+          sudo apt-get --allow-releaseinfo-change update
+          sudo apt-get update -y
+          sudo apt-get upgrade -y
+          sudo apt-get install -y libgl1-mesa-glx libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev libosmesa6 libosmesa6-dev libgles2-mesa-dev
+          python -m pip install cadquery
 
       - name: Run examples
         run: |

@@ -14,17 +14,20 @@ on:
 jobs:
   testing:
     runs-on: ubuntu-latest
-    container:
-      image: continuumio/miniconda3
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
       
       - name: install package
         run: |
-          conda install -c conda-forge -y mamba
-          mamba install -c conda-forge -y "openmc=0.13.0=dagmc*nompi*"
-          pip install .
+          python -m pip install --upgrade pip
+          python -m pip install --extra-index-url https://shimwell.github.io/wheels openmc
+          python -m pip install .
           python -c "import vertices_to_h5m"
 
       - name: install package with tests
